@@ -43,6 +43,8 @@ const handleWindowLifecycleEvents = (window) => {
     });
     electron_1.app.on("before-quit", () => {
         state_js_1.state.willQuit = true;
+        const overlayWindow = require("../overlay/overlayWindow.js");
+        overlayWindow.closeOverlayWindow();
     });
     electron_1.app.on("window-all-closed", () => {
         if (

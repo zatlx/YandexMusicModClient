@@ -50,6 +50,8 @@ const scrobbleManager_js_1 = require("./lib/scrobble/index.js");
 const playerActions_js_1 = require("./types/playerActions.js");
 const { throttle } = require("./lib/utils.js");
 const crypto = require("crypto");
+const overlayManager = require("./lib/overlay/overlayManager.js");
+const overlayWindow = require("./lib/overlay/overlayWindow.js");
 
 const eventsLogger = new Logger_js_1.Logger("Events");
 const isBoolean = (value) => {
@@ -59,6 +61,34 @@ const isBoolean = (value) => {
 const PROGRESS_BAR_THROTTLE_MS = 200;
 
 let mainWindow = undefined;
+
+const fetchInitialPlayerState = async (window) => {
+    try {
+        const playerData = await window.webContents.executeJavaScript(`
+            (() => {
+                try {
+                    const store = window.__NEXT_DATA__?.props?.pageProps?.serverState;
+                    if (store && store.sonataState && store.sonataState.playerState) {
+                        return {
+                            track: store.sonataState.playerState.playerState.entity.data,
+                            isPlaying: store.sonataState.playerState.playerState.status.paused === false,
+                            progress: store.sonataState.playerState.playerState.progress.position,
+                            duration: store.sonataState.playerState.playerState.progress.duration
+                        };
+                    }
+                    return null;
+                } catch (e) {
+                    return null;
+                }
+            })()
+        `);
+
+        if (playerData && playerData.track) {
+            overlayManager.handlePlayerState(playerData);
+        }
+    } catch (err) {
+    }
+};
 
 const updateGlobalShortcuts = () => {
     eventsLogger.info("(GlobalShortcuts) Update triggered.");
@@ -191,6 +221,7 @@ const handleApplicationEvents = (window) => {
 
     electron_1.app.on("will-quit", () => {
         electron_1.globalShortcut.unregisterAll();
+        overlayManager.cleanup();
     });
 
     electron_1.app.on("child-process-gone", (event, { type, reason }) => {
@@ -246,6 +277,25 @@ const handleApplicationEvents = (window) => {
                 events_js_1.Events.APPLICATION_READY,
             );
             (0, deviceInfo_js_1.logHardwareInfo)();
+
+            try {
+                const token = await window.webContents.executeJavaScript(
+                    'JSON.parse(localStorage.getItem("oauth")).value;'
+                );
+                if (token) {
+                    const userAgent = window.webContents.getUserAgent();
+                    overlayManager.initTracksApi(token, userAgent);
+                }
+            } catch (error) {
+            }
+
+            const overlaySettings = store_js_1.getModFeatures()?.overlay || {};
+            if (overlaySettings.enable) {
+                overlayWindow.createOverlayWindow();
+                overlayManager.updateOverlaySettings(overlaySettings);
+                await fetchInitialPlayerState(window);
+            }
+
             if (state_js_1.state.deeplink) {
                 (0, handleDeeplink_js_1.navigateToDeeplink)(
                     window,
@@ -401,6 +451,19 @@ const handleApplicationEvents = (window) => {
         (0, taskBarExtension_js_1.onPlayerStateChange)(window, data);
         (0, scrobbleManager_js_1.handlePlayingStateEvent)(data);
         (0, discordRichPresence_js_1.discordRichPresence)(data);
+
+        const progressSeconds = data.progress?.position || data.progress;
+        const durationSeconds = data.progress?.duration || data.duration || data.track?.durationMs / 1000;
+
+        const overlayData = {
+            track: data.track,
+            isPlaying: data.isPlaying,
+            progress: progressSeconds ? progressSeconds * 1000 : 0,
+            duration: durationSeconds ? durationSeconds * 1000 : (data.track?.durationMs || 0),
+            status: data.status
+        };
+
+        overlayManager.handlePlayerState(overlayData);
     });
     electron_1.ipcMain.on(events_js_1.Events.YNISON_STATE, (event, data) => {
         eventsLogger.info(`Event received`, events_js_1.Events.YNISON_STATE);
@@ -453,6 +516,23 @@ const handleApplicationEvents = (window) => {
             if (key === "modFeatures.globalShortcuts.enable") {
                 updateGlobalShortcuts();
             }
+
+            if (key === "modFeatures.overlay.enable") {
+                if (value) {
+                    overlayWindow.createOverlayWindow();
+                    overlayWindow.showOverlay();
+                    const settings = store_js_1.getModFeatures()?.overlay || {};
+                    overlayManager.updateOverlaySettings(settings);
+                    fetchInitialPlayerState(window);
+                } else {
+                    overlayWindow.closeOverlayWindow();
+                }
+            }
+
+            if (key.startsWith("modFeatures.overlay")) {
+                const settings = store_js_1.getModFeatures()?.overlay || {};
+                overlayManager.updateOverlaySettings(settings);
+            }
         },
     );
 
@@ -493,6 +573,78 @@ const handleApplicationEvents = (window) => {
                 error,
             );
             return;
+        }
+    });
+
+    electron_1.ipcMain.on("overlay-drag-start", (event, x, y) => {
+        const win = overlayWindow.getOverlayWindow();
+        if (win) {
+            const [winX, winY] = win.getPosition();
+            win._dragOffset = { x: x - winX, y: y - winY };
+        }
+    });
+
+    electron_1.ipcMain.on("overlay-drag-move", (event, x, y) => {
+        const win = overlayWindow.getOverlayWindow();
+        if (win && win._dragOffset) {
+            win.setPosition(x - win._dragOffset.x, y - win._dragOffset.y);
+        }
+    });
+
+    electron_1.ipcMain.on("overlay-drag-end", () => {
+        const win = overlayWindow.getOverlayWindow();
+        if (win) {
+            delete win._dragOffset;
+            const [x, y] = win.getPosition();
+            const currentSettings = store_js_1.getModFeatures()?.overlay || {};
+            store_js_1.set("modFeatures.overlay", { ...currentSettings, position: { x, y } });
+        }
+    });
+
+    electron_1.ipcMain.handle("overlay-get-dynamic-color", async () => {
+        try {
+            const color = await window.webContents.executeJavaScript(`
+                (() => {
+                    try {
+                        const playerBar = document.querySelector('[data-test-id="PLAYERBAR_DESKTOP"]');
+                        
+                        if (playerBar) {
+                            const style = getComputedStyle(playerBar);
+                            const playerColor = style.getPropertyValue('--player-average-color-background');
+                            
+                            if (playerColor && playerColor.trim()) {
+                                return playerColor.trim();
+                            }
+                        }
+                        
+                        const playerSelectors = [
+                            '[class*="PlayerBar_root"]',
+                            '[class*="PlayerBarDesktop"]',
+                            '.PlayerBar_root__cXUnU'
+                        ];
+                        
+                        for (const selector of playerSelectors) {
+                            const element = document.querySelector(selector);
+                            
+                            if (element) {
+                                const style = getComputedStyle(element);
+                                const playerColor = style.getPropertyValue('--player-average-color-background');
+                                
+                                if (playerColor && playerColor.trim()) {
+                                    return playerColor.trim();
+                                }
+                            }
+                        }
+                        
+                        return null;
+                    } catch (e) {
+                        return null;
+                    }
+                })()
+            `);
+            return color;
+        } catch (error) {
+            return null;
         }
     });
 };

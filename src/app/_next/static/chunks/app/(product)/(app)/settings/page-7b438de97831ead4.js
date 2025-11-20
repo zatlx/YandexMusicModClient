@@ -1580,6 +1580,188 @@
             });
 
 
+            let overlaySettings = (0, n.PA)(({ modal: t }) => {
+                let { formatMessage: e } = (0, r.A)(),
+                    { notify: j } = (0, _.lkh)(),
+                    [isOverlayEnabled, setIsOverlayEnabled] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.enable')),
+                    [opacity, setOpacity] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.opacity')),
+                    [bgColor, setBgColor] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.bgColor') ?? '#000000'),
+                    [dynamicColor, setDynamicColor] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.dynamicColor') ?? false),
+                    [coverSize, setCoverSize] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.coverSize') ?? 80),
+                    [draggable, setDraggable] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.draggable') ?? true),
+                    onOverlayEnableToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.enable toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.enable', e);
+                        setIsOverlayEnabled(e);
+                    }, []),
+                    onShowLyricsToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.showLyrics toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.showLyrics', e);
+                    }, []),
+                    onLyricsBlockSeparatedToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.lyricsBlockSeparated toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.lyricsBlockSeparated', e);
+                    }, []),
+                    onOpacityChange = (0, d.useCallback)(async (e) => {
+                        let value = Math.min(Math.max(e, 0), 100);
+                        setOpacity(value);
+                        console.log('modFeatures.overlay.opacity changed. Value: ', value);
+                        window.nativeSettings.set('modFeatures.overlay.opacity', value);
+                    }, []),
+                    onBgColorChange = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.bgColor changed. Value: ', e);
+                        setBgColor(e);
+                        window.nativeSettings.set('modFeatures.overlay.bgColor', e);
+                    }, []),
+                    onDynamicColorToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.dynamicColor toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.dynamicColor', e);
+                        setDynamicColor(e);
+                    }, []),
+                    onCoverSizeChange = (0, d.useCallback)(async (e) => {
+                        let value = Math.min(Math.max(e, 40), 120);
+                        setCoverSize(value);
+                        console.log('modFeatures.overlay.coverSize changed. Value: ', value);
+                        window.nativeSettings.set('modFeatures.overlay.coverSize', value);
+                    }, []),
+                    onDraggableToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.draggable toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.draggable', e);
+                        setDraggable(e);
+                    }, []);
+                return (0, i.jsxs)(p.a, {
+                    className: H().root,
+                    style: { 'max-width': '34.375rem' },
+                    title: 'Оверлей',
+                    headerClassName: H().modalHeader,
+                    contentClassName: H().modalContent,
+                    open: t.isOpened,
+                    onOpenChange: t.onOpenChange,
+                    onClose: t.close,
+                    size: 'fitContent',
+                    placement: 'center',
+                    labelClose: e({ id: 'interface-actions.close' }),
+                    children: (0, i.jsxs)('ul', {
+                        className: `${B().root} ${H().list}`,
+                        style: { width: '32.125rem', 'max-height': '37.5rem', gap: 0 },
+                        children: [
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Включить оверлей',
+                                    description: 'Отображает информацию о текущем треке поверх других окон. При включнии необходимо сменить трек',
+                                    onChange: onOverlayEnableToggle,
+                                    isChecked: isOverlayEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Показывать текст песни',
+                                    description: 'Отображает текст текущей песни в оверлее',
+                                    onChange: onShowLyricsToggle,
+                                    isChecked: window.nativeSettings.get('modFeatures.overlay.showLyrics'),
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Разделить блоки',
+                                    description: 'Отображать текст в отдельном блоке с отступом',
+                                    onChange: onLyricsBlockSeparatedToggle,
+                                    isChecked: window.nativeSettings.get('modFeatures.overlay.lyricsBlockSeparated'),
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Разрешить перетаскивание',
+                                    description: 'Позволяет перемещать оверлей мышью',
+                                    onChange: onDraggableToggle,
+                                    isChecked: draggable,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(settingBarWithSlider, {
+                                    title: 'Прозрачность фона',
+                                    description: 'Уровень прозрачности фона оверлея (0-100%)',
+                                    onChange: onOpacityChange,
+                                    value: opacity,
+                                    maxValue: 100,
+                                    minValue: 0,
+                                    step: 5,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(settingBarWithSlider, {
+                                    title: 'Размер обложки',
+                                    description: `${coverSize}px`,
+                                    onChange: onCoverSizeChange,
+                                    value: coverSize,
+                                    maxValue: 120,
+                                    minValue: 40,
+                                    step: 5,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Динамический цвет',
+                                    description: 'Использовать цвет из плеера',
+                                    onChange: onDynamicColorToggle,
+                                    isChecked: dynamicColor,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsxs)('div', {
+                                    style: { padding: '12px 16px' },
+                                    children: [
+                                        (0, i.jsx)(c.Caption, {
+                                            type: 'controls',
+                                            variant: 'div',
+                                            size: 'm',
+                                            weight: 'medium',
+                                            children: 'Цвет фона',
+                                        }),
+                                        (0, i.jsx)(c.Caption, {
+                                            type: 'controls',
+                                            variant: 'div',
+                                            size: 's',
+                                            style: { opacity: 0.6, marginTop: '4px' },
+                                            children: 'Используется если динамический цвет выключен',
+                                        }),
+                                        (0, i.jsx)('input', {
+                                            type: 'color',
+                                            value: bgColor,
+                                            onChange: (ev) => onBgColorChange(ev.target.value),
+                                            disabled: !isOverlayEnabled || dynamicColor,
+                                            style: {
+                                                marginTop: '12px',
+                                                width: '100%',
+                                                height: '40px',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: isOverlayEnabled && !dynamicColor ? 'pointer' : 'not-allowed',
+                                            },
+                                        }),
+                                    ],
+                                }),
+                            }),
+                        ],
+                    }),
+                });
+            });
+
+
             let vibeBehaviorEnhancementsSettings = (0, n.PA)(() => {
                 let { formatMessage: e } = (0, r.A)(),
                     {
@@ -2051,6 +2233,13 @@
                     v = (0, u.Sq)(),
                     { notify: j } = (0, _.lkh)(),
                     { formatMessage: C } = (0, r.A)(),
+                    [overlayModalOpened, setOverlayModalOpened] = (0, d.useState)(false),
+                    overlaySettingsModal = {
+                        isOpened: overlayModalOpened,
+                        onOpenChange: setOverlayModalOpened,
+                        open: () => setOverlayModalOpened(true),
+                        close: () => setOverlayModalOpened(false),
+                    },
                     b = (() => {
                         let e = (0, _.NFA)().get(_.twC),
                             t = (0, _._lF)(e.oldWebHost),
@@ -2421,6 +2610,17 @@
                                         onClick: windowBehaviorSettingsModal.open,
                                     }),
                                     (0, i.jsx)(windowBehaviorSettings, {}),
+                                ],
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: [
+                                    (0, i.jsx)(S, {
+                                        title: 'Оверлей',
+                                        description: 'Настройки отображения информации трека поверх других окон',
+                                        onClick: overlaySettingsModal.open,
+                                    }),
+                                    (0, i.jsx)(overlaySettings, { modal: overlaySettingsModal }),
                                 ],
                             }),
                             (0, i.jsx)('li', {

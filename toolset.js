@@ -55,7 +55,7 @@ const EXTRACTED_ENTITLEMENTS_PATH = path.join(TEMP_DIR, "extracted_entitlements.
 const PATCH_NOTES_PATH = path.join(process.argv[1], "../PATCHNOTES.md");
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const gitOwner = 'TheKing-OfTime';
+const gitOwner = 'zatlx';
 const gitRepo = 'YandexMusicModClient';
 
 const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
