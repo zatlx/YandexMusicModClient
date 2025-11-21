@@ -53,16 +53,26 @@
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.1);
       padding: 0;
-      height: 350px;
-      display: none;
+      height: 0;
+      display: flex;
       flex-direction: column;
       overflow: hidden;
       margin-top: 8px;
-      transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        margin-top 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
     }
 
     .lyrics-block.visible {
-      display: flex;
+      height: 350px;
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
     }
 
     .overlay-container.merged .lyrics-block {
