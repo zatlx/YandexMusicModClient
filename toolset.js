@@ -83,7 +83,7 @@ class PatchNote {
     }
 
     toGitHub(){
-        return `## Патч для Яндекс Музыки ${this.ymVersion}\n\n${this.patchNoteString}\n\n![GitHub Downloads (all assets, specific tag)](https://img.shields.io/github/downloads/TheKing-OfTime/YandexMusicModClient/onlyDiscordRPC%40${this.version}/total?label=Downloads)`
+        return `## Патч для Яндекс Музыки ${this.ymVersion}\n\n${this.patchNoteString}\n\n![GitHub Downloads (all assets, specific tag)](https://img.shields.io/github/downloads/zatlx/YandexMusicModClient/onlyDiscordRPC%40${this.version}/total?label=Downloads)`
     }
 }
     /**

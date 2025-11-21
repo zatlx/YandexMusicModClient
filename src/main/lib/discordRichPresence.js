@@ -30,7 +30,7 @@ class convertableLink {
 const settings = () => store_js_1.getModFeatures()?.discordRPC;
 
 const clientId = settings()?.applicationIDForRPC ?? "1124055337234858005";
-const GITHUB_LINK = "https://github.com/TheKing-OfTime/YandexMusicModClient";
+const GITHUB_LINK = "https://github.com/zatlx/YandexMusicModClient";
 const SET_ACTIVITY_TIMEOUT_MS = 3000;
 const STATUS_DISPLAY_TYPES = {
   0: 0, // Name
