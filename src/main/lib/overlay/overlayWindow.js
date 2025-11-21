@@ -14,7 +14,17 @@ const OVERLAY_CONFIG = {
   LYRICS_HEIGHT: 200,
   MIN_WIDTH: 200,
   MAX_WIDTH: 1200,
+  BASE_RESOLUTION: {
+    width: 2560,
+    height: 1440,
+  },
 };
+
+function calculateScale(screenWidth, screenHeight) {
+  const scaleX = screenWidth / OVERLAY_CONFIG.BASE_RESOLUTION.width;
+  const scaleY = screenHeight / OVERLAY_CONFIG.BASE_RESOLUTION.height;
+  return Math.min(scaleX, scaleY);
+}
 
 function createOverlayWindow() {
   if (overlayWindow && !overlayWindow.isDestroyed()) {
@@ -30,8 +40,13 @@ function createOverlayWindow() {
     const primaryDisplay = screen.getPrimaryDisplay();
     const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
 
-    const windowWidth = Math.max(OVERLAY_CONFIG.MIN_WIDTH, Math.min(settings.minWidth || OVERLAY_CONFIG.DEFAULT_WIDTH, OVERLAY_CONFIG.MAX_WIDTH));
-    const windowHeight = OVERLAY_CONFIG.DEFAULT_HEIGHT + (settings.showLyrics ? OVERLAY_CONFIG.LYRICS_HEIGHT : 0);
+    const scale = calculateScale(screenWidth, screenHeight);
+
+    const baseWidth = settings.minWidth || OVERLAY_CONFIG.DEFAULT_WIDTH;
+    const baseHeight = OVERLAY_CONFIG.DEFAULT_HEIGHT + (settings.showLyrics ? OVERLAY_CONFIG.LYRICS_HEIGHT : 0);
+
+    const windowWidth = Math.round(Math.max(OVERLAY_CONFIG.MIN_WIDTH, Math.min(baseWidth, OVERLAY_CONFIG.MAX_WIDTH)) * scale);
+    const windowHeight = Math.round(baseHeight * scale);
 
     overlayWindow = new BrowserWindow({
       width: windowWidth,
@@ -77,6 +92,7 @@ function createOverlayWindow() {
     overlayWindow.webContents.on("did-finish-load", () => {
       const currentSettings = getStore("modFeatures.overlay") || {};
       sendToOverlay("update-settings", currentSettings);
+      sendToOverlay("update-scale", scale);
     });
 
     return overlayWindow;
@@ -109,8 +125,15 @@ function closeOverlayWindow() {
 
 function setOverlaySize(width, height) {
   if (overlayWindow && !overlayWindow.isDestroyed()) {
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+    const scale = calculateScale(screenWidth, screenHeight);
+
     const clampedWidth = Math.max(OVERLAY_CONFIG.MIN_WIDTH, Math.min(width, OVERLAY_CONFIG.MAX_WIDTH));
-    overlayWindow.setSize(clampedWidth, height);
+    const scaledWidth = Math.round(clampedWidth * scale);
+    const scaledHeight = Math.round(height * scale);
+
+    overlayWindow.setSize(scaledWidth, scaledHeight);
   }
 }
 

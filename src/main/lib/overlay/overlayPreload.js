@@ -18,6 +18,10 @@ contextBridge.exposeInMainWorld("overlayAPI", {
   onUpdateSettings: (callback) => {
     ipcRenderer.on("update-settings", (event, data) => callback(data));
   },
+
+  onUpdateScale: (callback) => {
+    ipcRenderer.on("update-scale", (event, data) => callback(data));
+  },
   
   notifyDragStart: (x, y) => {
     ipcRenderer.send("overlay-drag-start", x, y);
