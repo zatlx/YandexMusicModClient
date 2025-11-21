@@ -116,7 +116,7 @@
                                     children: (0, i.jsx)(m.N_, {
                                         className: h().link,
                                         target: '_blank',
-                                        href: 'https://github.com/TheKing-OfTime/YandexMusicModClient',
+                                        href: 'https://github.com/zatlx/YandexMusicModClient',
                                         children: (0, i.jsx)(c.Caption, {
                                             type: 'controls',
                                             variant: 'span',
@@ -131,7 +131,7 @@
                                     children: (0, i.jsx)(m.N_, {
                                         className: h().link,
                                         target: '_blank',
-                                        href: 'https://boosty.to/thekingoftime/donate',
+                                        href: 'https://boosty.to/zatlx/donate',
                                         children: (0, i.jsx)(c.Caption, {
                                             type: 'controls',
                                             variant: 'span',
