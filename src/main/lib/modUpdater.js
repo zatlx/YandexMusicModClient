@@ -20,7 +20,7 @@ const zstdDecompressPromise = zlib.zstdDecompress ? promisify(zlib.zstdDecompres
 
 exports.getModUpdater = exports.ModUpdater = void 0;
 
-const UPDATE_CHECK_URL = `https://api.github.com/repos/TheKing-OfTime/YandexMusicModClient/releases/latest`;
+const UPDATE_CHECK_URL = `https://api.github.com/repos/zatlx/YandexMusicModClient/releases/latest`;
 const APP_ASAR_PATH = electron.app.getAppPath();
 const APP_ASAR_TMP_DOWNLOAD_PATH = path.join(
   electron.app.getAppPath(),
