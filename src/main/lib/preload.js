@@ -132,6 +132,10 @@ electron_1.contextBridge.exposeInMainWorld(
   () =>
     store_js_1.getModFeatures()?.vibeAnimationEnhancement?.enableEndlessMusic,
 );
+electron_1.contextBridge.exposeInMainWorld(
+  "HIDE_PAYMENT_ALERT",
+  () => store_js_1.getModFeatures()?.windowBehavior?.hidePaymentAlert,
+);
 electron_1.contextBridge.exposeInMainWorld("DEFAULT_EXPERIMENT_OVERRIDES", () =>
   store_js_1.getDefaultExperimentOverrides(),
 );
@@ -203,5 +207,13 @@ window.document.addEventListener("DOMContentLoaded", () => {
   ) {
     window.document.documentElement.style.backgroundColor =
       theme === theme_js_1.Theme.Light ? "#FFFFFF" : "#000000";
+  }
+
+  const hidePaymentAlert = store_js_1.getModFeatures()?.windowBehavior?.hidePaymentAlert;
+  if (hidePaymentAlert) {
+    const style = document.createElement('style');
+    style.id = 'hide-payment-alert-style';
+    style.textContent = '.RedAlert_wrapper__rGvGN { display: none !important; }';
+    document.head.appendChild(style);
   }
 });

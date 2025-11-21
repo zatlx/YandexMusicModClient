@@ -1496,6 +1496,26 @@
                     window.nativeSettings.set('modFeatures.windowBehavior.startupPage', e);
                     setStartupPage(e);
                 }, []);
+                const onHidePaymentAlertToggle = (0, d.useCallback)(async (e) => {
+                    console.log('hidePaymentAlert toggled. Value: ', e);
+                    window.nativeSettings.set('modFeatures.windowBehavior.hidePaymentAlert', e);
+
+                    let styleId = 'hide-payment-alert-style';
+                    let existingStyle = document.getElementById(styleId);
+
+                    if (e) {
+                        if (!existingStyle) {
+                            const style = document.createElement('style');
+                            style.id = styleId;
+                            style.textContent = '.RedAlert_wrapper__rGvGN { display: none !important; }';
+                            document.head.appendChild(style);
+                        }
+                    } else {
+                        if (existingStyle) {
+                            existingStyle.remove();
+                        }
+                    }
+                }, []);
                 return (0, i.jsxs)(p.a, {
                     className: H().root,
                     style: { 'max-width': '34.375rem' },
@@ -1572,6 +1592,15 @@
                                     onChange: onTaskbarExtensionsCoverAsThumbnailToggle,
                                     isChecked: window.nativeSettings.get('modFeatures.taskBarExtensions.coverAsThumbnail'),
                                     disabled: !isTaskbarExtensionsEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Скрыть плашку об оплате',
+                                    description: 'Скрывает красную плашку с уведомлением о проблемах с оплатой подписки',
+                                    onChange: onHidePaymentAlertToggle,
+                                    isChecked: window.nativeSettings.get('modFeatures.windowBehavior.hidePaymentAlert'),
                                 }),
                             }),
                         ],

@@ -171,7 +171,8 @@ const init = () => {
       minimizeToTrayOnWindowClose: true,
       startMinimized: false,
       preventDisplaySleep: false,
-    startupPage: "/",
+      startupPage: "/",
+      hidePaymentAlert: false,
     },
     overlay: {
       enable: false,
