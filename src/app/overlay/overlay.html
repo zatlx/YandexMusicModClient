@@ -45,6 +45,23 @@
       gap: calc(12px * var(--ui-scale));
       height: calc(112px * var(--ui-scale));
       transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-direction: row;
+    }
+
+    .main-block.cover-right {
+      flex-direction: row-reverse;
+    }
+
+    .main-block.no-border {
+      border: none;
+    }
+
+    .main-block.hidden {
+      display: none;
+    }
+
+    .main-block.no-rounded {
+      border-radius: 0;
     }
 
     .lyrics-block {
@@ -76,6 +93,14 @@
       pointer-events: auto;
     }
 
+    .lyrics-block.no-border {
+      border: none;
+    }
+
+    .lyrics-block.no-rounded {
+      border-radius: 0;
+    }
+
     .overlay-container.merged .lyrics-block {
       margin-top: 0;
     }
@@ -102,6 +127,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+
+    .track-cover.hidden {
+      display: none;
+    }
+
+    .track-cover.no-rounded {
+      border-radius: 0;
     }
 
     .cover-image {
@@ -133,6 +166,23 @@
       overflow: hidden;
       text-overflow: ellipsis;
       text-shadow: 0 calc(1px * var(--ui-scale)) calc(2px * var(--ui-scale)) rgba(0, 0, 0, 0.5);
+      text-align: left;
+    }
+
+    .track-title.align-left {
+      text-align: left;
+    }
+
+    .track-title.align-center {
+      text-align: center;
+    }
+
+    .track-title.align-right {
+      text-align: right;
+    }
+
+    .track-title.hidden {
+      display: none;
     }
 
     .track-artist {
@@ -143,6 +193,23 @@
       overflow: hidden;
       text-overflow: ellipsis;
       text-shadow: 0 calc(1px * var(--ui-scale)) calc(2px * var(--ui-scale)) rgba(0, 0, 0, 0.5);
+      text-align: left;
+    }
+
+    .track-artist.align-left {
+      text-align: left;
+    }
+
+    .track-artist.align-center {
+      text-align: center;
+    }
+
+    .track-artist.align-right {
+      text-align: right;
+    }
+
+    .track-artist.hidden {
+      display: none;
     }
 
     .lyrics-container {
@@ -351,6 +418,19 @@
       lyricsBlockSeparated: true,
       coverSize: 65,
       draggable: false,
+      coverPosition: 'left',
+      textAlign: 'left',
+      showCover: true,
+      showTitle: true,
+      showArtist: true,
+      showBorder: true,
+      showMainBlock: true,
+      roundedCorners: true,
+      titleFontSize: 16,
+      artistFontSize: 14,
+      lyricsFontSize: 18,
+      lyricsLineSpacing: 5,
+      showWaitingAnimation: true,
     };
 
     let isDragging = false;
@@ -417,7 +497,7 @@
         overlayContainer.classList.remove('has-lyrics');
       }
 
-      if (currentSettings.lyricsBlockSeparated) {
+      if (currentSettings.showMainBlock === false || currentSettings.lyricsBlockSeparated) {
         overlayContainer.classList.remove('merged');
         overlayContainer.classList.add('separated');
       } else {
@@ -431,6 +511,94 @@
         trackCover.style.width = (size * scale) + 'px';
         trackCover.style.height = (size * scale) + 'px';
         mainBlock.style.height = ((size + 32) * scale) + 'px';
+      }
+
+      if (currentSettings.coverPosition === 'right') {
+        mainBlock.classList.add('cover-right');
+      } else {
+        mainBlock.classList.remove('cover-right');
+      }
+
+      trackTitle.className = 'track-title';
+      trackArtist.className = 'track-artist';
+      
+      if (currentSettings.textAlign === 'left') {
+        trackTitle.classList.add('align-left');
+        trackArtist.classList.add('align-left');
+      } else if (currentSettings.textAlign === 'center') {
+        trackTitle.classList.add('align-center');
+        trackArtist.classList.add('align-center');
+      } else {
+        trackTitle.classList.add('align-right');
+        trackArtist.classList.add('align-right');
+      }
+
+      if (currentSettings.showCover === false) {
+        trackCover.classList.add('hidden');
+      } else {
+        trackCover.classList.remove('hidden');
+      }
+
+      if (currentSettings.showTitle === false) {
+        trackTitle.classList.add('hidden');
+      } else {
+        trackTitle.classList.remove('hidden');
+      }
+
+      if (currentSettings.showArtist === false) {
+        trackArtist.classList.add('hidden');
+      } else {
+        trackArtist.classList.remove('hidden');
+      }
+
+      if (currentSettings.showBorder === false) {
+        mainBlock.classList.add('no-border');
+        lyricsBlock.classList.add('no-border');
+      } else {
+        mainBlock.classList.remove('no-border');
+        lyricsBlock.classList.remove('no-border');
+      }
+
+      if (currentSettings.showMainBlock === false) {
+        mainBlock.classList.add('hidden');
+      } else {
+        mainBlock.classList.remove('hidden');
+      }
+
+      if (currentSettings.roundedCorners === false) {
+        mainBlock.classList.add('no-rounded');
+        lyricsBlock.classList.add('no-rounded');
+        trackCover.classList.add('no-rounded');
+      } else {
+        mainBlock.classList.remove('no-rounded');
+        lyricsBlock.classList.remove('no-rounded');
+        trackCover.classList.remove('no-rounded');
+      }
+
+      if (currentSettings.titleFontSize) {
+        const scale = parseFloat(getComputedStyle(document.body).getPropertyValue('--ui-scale')) || 1;
+        trackTitle.style.fontSize = (currentSettings.titleFontSize * scale) + 'px';
+      }
+
+      if (currentSettings.artistFontSize) {
+        const scale = parseFloat(getComputedStyle(document.body).getPropertyValue('--ui-scale')) || 1;
+        trackArtist.style.fontSize = (currentSettings.artistFontSize * scale) + 'px';
+      }
+
+      if (currentSettings.lyricsFontSize) {
+        const scale = parseFloat(getComputedStyle(document.body).getPropertyValue('--ui-scale')) || 1;
+        const lyricsLines = document.querySelectorAll('.lyrics-line');
+        lyricsLines.forEach(line => {
+          line.style.fontSize = (currentSettings.lyricsFontSize * scale) + 'px';
+        });
+      }
+
+      if (currentSettings.lyricsLineSpacing !== undefined) {
+        const scale = parseFloat(getComputedStyle(document.body).getPropertyValue('--ui-scale')) || 1;
+        const lyricsScroller = document.getElementById('lyricsScroller');
+        if (lyricsScroller) {
+          lyricsScroller.style.gap = (currentSettings.lyricsLineSpacing * scale) + 'px';
+        }
       }
     }
 
@@ -485,6 +653,10 @@
           const lineEl = document.createElement('div');
           lineEl.className = 'lyrics-line';
           lineEl.textContent = line.text;
+          if (currentSettings.lyricsFontSize) {
+            const scale = parseFloat(getComputedStyle(document.body).getPropertyValue('--ui-scale')) || 1;
+            lineEl.style.fontSize = (currentSettings.lyricsFontSize * scale) + 'px';
+          }
           lyricsScroller.appendChild(lineEl);
         });
 
@@ -533,6 +705,10 @@
           const lineEl = document.createElement('div');
           lineEl.className = 'lyrics-line';
           lineEl.textContent = line.text;
+          if (currentSettings.lyricsFontSize) {
+            const scale = parseFloat(getComputedStyle(document.body).getPropertyValue('--ui-scale')) || 1;
+            lineEl.style.fontSize = (currentSettings.lyricsFontSize * scale) + 'px';
+          }
           lyricsScroller.appendChild(lineEl);
           lyricsElements.push(lineEl);
         });
@@ -549,9 +725,13 @@
         waitingContainer.style.display = 'none';
       }
       else if (timeUntilFirstLyric > 3000) {
-        waitingContainer.style.display = 'flex';
-        waitingEl.style.display = 'flex';
-        countdownEl.style.display = 'none';
+        if (currentSettings.showWaitingAnimation !== false) {
+          waitingContainer.style.display = 'flex';
+          waitingEl.style.display = 'flex';
+          countdownEl.style.display = 'none';
+        } else {
+          waitingContainer.style.display = 'none';
+        }
 
         lyricsLines.forEach((lineEl, index) => {
           if (index < 4) {
@@ -561,16 +741,22 @@
           }
         });
 
-        waitingContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (currentSettings.showWaitingAnimation !== false) {
+          waitingContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         return;
       }
 
       else if (timeUntilFirstLyric > 0 && timeUntilFirstLyric <= 3000) {
-        const countdownNumber = Math.ceil(timeUntilFirstLyric / 1000);
-        waitingContainer.style.display = 'flex';
-        waitingEl.style.display = 'none';
-        countdownEl.style.display = 'block';
-        countdownEl.textContent = countdownNumber;
+        if (currentSettings.showWaitingAnimation !== false) {
+          const countdownNumber = Math.ceil(timeUntilFirstLyric / 1000);
+          waitingContainer.style.display = 'flex';
+          waitingEl.style.display = 'none';
+          countdownEl.style.display = 'block';
+          countdownEl.textContent = countdownNumber;
+        } else {
+          waitingContainer.style.display = 'none';
+        }
 
         lyricsLines.forEach((lineEl, index) => {
           if (index < 4) {
@@ -580,7 +766,9 @@
           }
         });
 
-        waitingContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (currentSettings.showWaitingAnimation !== false) {
+          waitingContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         return;
       }
       else {

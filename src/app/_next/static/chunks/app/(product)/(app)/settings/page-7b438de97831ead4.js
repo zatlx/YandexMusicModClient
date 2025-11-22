@@ -1612,12 +1612,26 @@
             let overlaySettings = (0, n.PA)(({ modal: t }) => {
                 let { formatMessage: e } = (0, r.A)(),
                     { notify: j } = (0, _.lkh)(),
-                    [isOverlayEnabled, setIsOverlayEnabled] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.enable')),
+                    [isOverlayEnabled, setIsOverlayEnabled] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.enable') ?? false),
                     [opacity, setOpacity] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.opacity')),
                     [bgColor, setBgColor] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.bgColor') ?? '#000000'),
                     [dynamicColor, setDynamicColor] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.dynamicColor') ?? false),
                     [coverSize, setCoverSize] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.coverSize') ?? 80),
                     [draggable, setDraggable] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.draggable') ?? true),
+                    [coverPosition, setCoverPosition] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.coverPosition') ?? 'left'),
+                    [textAlign, setTextAlign] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.textAlign') ?? 'left'),
+                    [showCover, setShowCover] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.showCover') ?? true),
+                    [showTitle, setShowTitle] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.showTitle') ?? true),
+                    [showArtist, setShowArtist] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.showArtist') ?? true),
+                    [showBorder, setShowBorder] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.showBorder') ?? true),
+                    [showMainBlock, setShowMainBlock] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.showMainBlock') ?? true),
+                    [roundedCorners, setRoundedCorners] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.roundedCorners') ?? true),
+                    [titleFontSize, setTitleFontSize] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.titleFontSize') ?? 16),
+                    [artistFontSize, setArtistFontSize] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.artistFontSize') ?? 14),
+                    [lyricsFontSize, setLyricsFontSize] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.lyricsFontSize') ?? 18),
+                    [lyricsLineSpacing, setLyricsLineSpacing] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.lyricsLineSpacing') ?? 5),
+                    [showWaitingAnimation, setShowWaitingAnimation] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.showWaitingAnimation') ?? true),
+                    [activeTab, setActiveTab] = (0, d.useState)('main'),
                     onOverlayEnableToggle = (0, d.useCallback)(async (e) => {
                         console.log('modFeatures.overlay.enable toggled. Value: ', e);
                         window.nativeSettings.set('modFeatures.overlay.enable', e);
@@ -1657,7 +1671,136 @@
                         console.log('modFeatures.overlay.draggable toggled. Value: ', e);
                         window.nativeSettings.set('modFeatures.overlay.draggable', e);
                         setDraggable(e);
-                    }, []);
+                    }, []),
+                    onCoverPositionToggle = (0, d.useCallback)(async (e) => {
+                        const newPosition = e ? 'right' : 'left';
+                        console.log('modFeatures.overlay.coverPosition toggled. Value: ', newPosition);
+                        window.nativeSettings.set('modFeatures.overlay.coverPosition', newPosition);
+                        setCoverPosition(newPosition);
+                    }, []),
+                    onTextAlignChange = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.textAlign changed. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.textAlign', e);
+                        setTextAlign(e);
+                    }, []),
+                    onShowCoverToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.showCover toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.showCover', e);
+                        setShowCover(e);
+                    }, []),
+                    onShowTitleToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.showTitle toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.showTitle', e);
+                        setShowTitle(e);
+                    }, []),
+                    onShowArtistToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.showArtist toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.showArtist', e);
+                        setShowArtist(e);
+                    }, []),
+                    onShowBorderToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.showBorder toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.showBorder', e);
+                        setShowBorder(e);
+                    }, []),
+                    onShowMainBlockToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.showMainBlock toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.showMainBlock', e);
+                        setShowMainBlock(e);
+                    }, []),
+                    onRoundedCornersToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.roundedCorners toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.roundedCorners', e);
+                        setRoundedCorners(e);
+                    }, []),
+                    onTitleFontSizeChange = (0, d.useCallback)(async (e) => {
+                        let value = Math.min(Math.max(e, 10), 32);
+                        setTitleFontSize(value);
+                        console.log('modFeatures.overlay.titleFontSize changed. Value: ', value);
+                        window.nativeSettings.set('modFeatures.overlay.titleFontSize', value);
+                    }, []),
+                    onArtistFontSizeChange = (0, d.useCallback)(async (e) => {
+                        let value = Math.min(Math.max(e, 10), 28);
+                        setArtistFontSize(value);
+                        console.log('modFeatures.overlay.artistFontSize changed. Value: ', value);
+                        window.nativeSettings.set('modFeatures.overlay.artistFontSize', value);
+                    }, []),
+                    onLyricsFontSizeChange = (0, d.useCallback)(async (e) => {
+                        let value = Math.min(Math.max(e, 12), 36);
+                        setLyricsFontSize(value);
+                        console.log('modFeatures.overlay.lyricsFontSize changed. Value: ', value);
+                        window.nativeSettings.set('modFeatures.overlay.lyricsFontSize', value);
+                    }, []),
+                    onLyricsLineSpacingChange = (0, d.useCallback)(async (e) => {
+                        let value = Math.min(Math.max(e, 0), 30);
+                        setLyricsLineSpacing(value);
+                        console.log('modFeatures.overlay.lyricsLineSpacing changed. Value: ', value);
+                        window.nativeSettings.set('modFeatures.overlay.lyricsLineSpacing', value);
+                    }, []),
+                    onShowWaitingAnimationToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.showWaitingAnimation toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.showWaitingAnimation', e);
+                        setShowWaitingAnimation(e);
+                    }, []),
+                    onResetSettings = (0, d.useCallback)(async () => {
+                        console.log('Resetting overlay settings to defaults');
+                        const currentEnabled = window.nativeSettings.get('modFeatures.overlay.enable');
+                        const currentPosition = window.nativeSettings.get('modFeatures.overlay.position');
+                        
+                        window.nativeSettings.set('modFeatures.overlay.showLyrics', true);
+                        window.nativeSettings.set('modFeatures.overlay.opacity', 75);
+                        setOpacity(75);
+                        window.nativeSettings.set('modFeatures.overlay.bgColor', '#000000');
+                        setBgColor('#000000');
+                        window.nativeSettings.set('modFeatures.overlay.dynamicColor', true);
+                        setDynamicColor(true);
+                        window.nativeSettings.set('modFeatures.overlay.coverSize', 65);
+                        setCoverSize(65);
+                        window.nativeSettings.set('modFeatures.overlay.draggable', false);
+                        setDraggable(false);
+                        window.nativeSettings.set('modFeatures.overlay.lyricsBlockSeparated', true);
+                        window.nativeSettings.set('modFeatures.overlay.coverPosition', 'left');
+                        setCoverPosition('left');
+                        window.nativeSettings.set('modFeatures.overlay.textAlign', 'left');
+                        setTextAlign('left');
+                        window.nativeSettings.set('modFeatures.overlay.showCover', true);
+                        setShowCover(true);
+                        window.nativeSettings.set('modFeatures.overlay.showTitle', true);
+                        setShowTitle(true);
+                        window.nativeSettings.set('modFeatures.overlay.showArtist', true);
+                        setShowArtist(true);
+                        window.nativeSettings.set('modFeatures.overlay.showBorder', true);
+                        setShowBorder(true);
+                        window.nativeSettings.set('modFeatures.overlay.showMainBlock', true);
+                        setShowMainBlock(true);
+                        window.nativeSettings.set('modFeatures.overlay.roundedCorners', true);
+                        setRoundedCorners(true);
+                        window.nativeSettings.set('modFeatures.overlay.titleFontSize', 16);
+                        setTitleFontSize(16);
+                        window.nativeSettings.set('modFeatures.overlay.artistFontSize', 14);
+                        setArtistFontSize(14);
+                        window.nativeSettings.set('modFeatures.overlay.lyricsFontSize', 18);
+                        setLyricsFontSize(18);
+                        window.nativeSettings.set('modFeatures.overlay.lyricsLineSpacing', 5);
+                        setLyricsLineSpacing(5);
+                        window.nativeSettings.set('modFeatures.overlay.showWaitingAnimation', true);
+                        setShowWaitingAnimation(true);
+                        
+                        window.nativeSettings.set('modFeatures.overlay.enable', currentEnabled);
+                        window.nativeSettings.set('modFeatures.overlay.position', currentPosition);
+                        
+                        j(
+                            (0, i.jsx)(m.$W, {
+                                message: (0, i.jsx)(c.Caption, {
+                                    variant: 'div',
+                                    type: 'controls',
+                                    size: 'm',
+                                    children: 'Настройки оверлея сброшены до стандартных значений',
+                                }),
+                            }),
+                            { containerId: _.uQT.INFO },
+                        );
+                    }, [j]);
                 return (0, i.jsxs)(p.a, {
                     className: H().root,
                     style: { 'max-width': '34.375rem' },
@@ -1674,22 +1817,14 @@
                         className: `${B().root} ${H().list}`,
                         style: { width: '32.125rem', 'max-height': '37.5rem', gap: 0 },
                         children: [
+
                             (0, i.jsx)('li', {
                                 className: B().item,
                                 children: (0, i.jsx)(P, {
-                                    title: 'Включить оверлей',
-                                    description: 'Отображает информацию о текущем треке поверх других окон. При включнии необходимо сменить трек',
-                                    onChange: onOverlayEnableToggle,
-                                    isChecked: isOverlayEnabled,
-                                }),
-                            }),
-                            (0, i.jsx)('li', {
-                                className: B().item,
-                                children: (0, i.jsx)(P, {
-                                    title: 'Показывать текст песни',
-                                    description: 'Отображает текст текущей песни в оверлее',
-                                    onChange: onShowLyricsToggle,
-                                    isChecked: window.nativeSettings.get('modFeatures.overlay.showLyrics'),
+                                    title: 'Разрешить перетаскивание',
+                                    description: 'Позволяет перемещать оверлей мышью',
+                                    onChange: onDraggableToggle,
+                                    isChecked: draggable,
                                     disabled: !isOverlayEnabled,
                                 }),
                             }),
@@ -1705,16 +1840,6 @@
                             }),
                             (0, i.jsx)('li', {
                                 className: B().item,
-                                children: (0, i.jsx)(P, {
-                                    title: 'Разрешить перетаскивание',
-                                    description: 'Позволяет перемещать оверлей мышью',
-                                    onChange: onDraggableToggle,
-                                    isChecked: draggable,
-                                    disabled: !isOverlayEnabled,
-                                }),
-                            }),
-                            (0, i.jsx)('li', {
-                                className: B().item,
                                 children: (0, i.jsx)(settingBarWithSlider, {
                                     title: 'Прозрачность фона',
                                     description: 'Уровень прозрачности фона оверлея (0-100%)',
@@ -1722,19 +1847,6 @@
                                     value: opacity,
                                     maxValue: 100,
                                     minValue: 0,
-                                    step: 5,
-                                    disabled: !isOverlayEnabled,
-                                }),
-                            }),
-                            (0, i.jsx)('li', {
-                                className: B().item,
-                                children: (0, i.jsx)(settingBarWithSlider, {
-                                    title: 'Размер обложки',
-                                    description: `${coverSize}px`,
-                                    onChange: onCoverSizeChange,
-                                    value: coverSize,
-                                    maxValue: 120,
-                                    minValue: 40,
                                     step: 5,
                                     disabled: !isOverlayEnabled,
                                 }),
@@ -1781,6 +1893,233 @@
                                                 borderRadius: '8px',
                                                 cursor: isOverlayEnabled && !dynamicColor ? 'pointer' : 'not-allowed',
                                             },
+                                        }),
+                                    ],
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                style: { padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)' },
+                                children: (0, i.jsxs)('div', {
+                                    style: { display: 'flex', gap: '8px' },
+                                    children: [
+                                        (0, i.jsx)(g.Button, {
+                                            color: activeTab === 'main' ? 'primary' : 'secondary',
+                                            radius: 'xxxl',
+                                            size: 'm',
+                                            onClick: () => setActiveTab('main'),
+                                            disabled: !isOverlayEnabled,
+                                            style: { flex: 1 },
+                                            children: 'Основной блок',
+                                        }),
+                                        (0, i.jsx)(g.Button, {
+                                            color: activeTab === 'lyrics' ? 'primary' : 'secondary',
+                                            radius: 'xxxl',
+                                            size: 'm',
+                                            onClick: () => setActiveTab('lyrics'),
+                                            disabled: !isOverlayEnabled,
+                                            style: { flex: 1 },
+                                            children: 'Текст',
+                                        }),
+                                    ],
+                                }),
+                            }),
+                            activeTab === 'main' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Показывать основной блок',
+                                    description: 'Отображает основной блок с информацией о треке',
+                                    onChange: onShowMainBlockToggle,
+                                    isChecked: showMainBlock,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            activeTab === 'main' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(settingBarWithDropdown, {
+                                    title: 'Выравнивание текста',
+                                    description: 'Выравнивание названия песни и исполнителей',
+                                    onChange: onTextAlignChange,
+                                    value: textAlign,
+                                    disabled: !isOverlayEnabled,
+                                    options: [
+                                        { value: 'left', label: 'По левому краю' },
+                                        { value: 'center', label: 'По центру' },
+                                        { value: 'right', label: 'По правому краю' },
+                                    ],
+                                }),
+                            }),
+                            activeTab === 'main' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Показывать рамку',
+                                    description: 'Отображать рамку вокруг оверлея',
+                                    onChange: onShowBorderToggle,
+                                    isChecked: showBorder,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            activeTab === 'main' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Закругленные углы',
+                                    description: 'Использовать закругленные углы для оверлея',
+                                    onChange: onRoundedCornersToggle,
+                                    isChecked: roundedCorners,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            activeTab === 'main' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Показывать обложку',
+                                    description: 'Отображать обложку трека в оверлее',
+                                    onChange: onShowCoverToggle,
+                                    isChecked: showCover,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            activeTab === 'main' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Обложка справа',
+                                    description: 'Переместить обложку в правую сторону блока',
+                                    onChange: onCoverPositionToggle,
+                                    isChecked: coverPosition === 'right',
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            activeTab === 'main' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(settingBarWithSlider, {
+                                    title: 'Размер обложки',
+                                    description: `${coverSize}px`,
+                                    onChange: onCoverSizeChange,
+                                    value: coverSize,
+                                    maxValue: 120,
+                                    minValue: 40,
+                                    step: 5,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            activeTab === 'main' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Показывать название',
+                                    description: 'Отображать название трека в оверлее',
+                                    onChange: onShowTitleToggle,
+                                    isChecked: showTitle,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            activeTab === 'main' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(settingBarWithSlider, {
+                                    title: 'Размер шрифта названия',
+                                    description: `${titleFontSize}px`,
+                                    onChange: onTitleFontSizeChange,
+                                    value: titleFontSize,
+                                    maxValue: 32,
+                                    minValue: 10,
+                                    step: 1,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            activeTab === 'main' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Показывать исполнителей',
+                                    description: 'Отображать исполнителей трека в оверлее',
+                                    onChange: onShowArtistToggle,
+                                    isChecked: showArtist,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            activeTab === 'main' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(settingBarWithSlider, {
+                                    title: 'Размер шрифта исполнителей',
+                                    description: `${artistFontSize}px`,
+                                    onChange: onArtistFontSizeChange,
+                                    value: artistFontSize,
+                                    maxValue: 28,
+                                    minValue: 10,
+                                    step: 1,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            activeTab === 'lyrics' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Показывать текст песни',
+                                    description: 'Отображает текст текущей песни в оверлее',
+                                    onChange: onShowLyricsToggle,
+                                    isChecked: window.nativeSettings.get('modFeatures.overlay.showLyrics'),
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            activeTab === 'lyrics' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(settingBarWithSlider, {
+                                    title: 'Размер шрифта текста песен',
+                                    description: `${lyricsFontSize}px`,
+                                    onChange: onLyricsFontSizeChange,
+                                    value: lyricsFontSize,
+                                    maxValue: 36,
+                                    minValue: 12,
+                                    step: 1,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            activeTab === 'lyrics' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(settingBarWithSlider, {
+                                    title: 'Расстояние между строками текста',
+                                    description: `${lyricsLineSpacing}px`,
+                                    onChange: onLyricsLineSpacingChange,
+                                    value: lyricsLineSpacing,
+                                    maxValue: 30,
+                                    minValue: 0,
+                                    step: 1,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            activeTab === 'lyrics' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Анимация ожидания текста',
+                                    description: 'Показывать анимацию точек и отсчет перед началом текста песни',
+                                    onChange: onShowWaitingAnimationToggle,
+                                    isChecked: showWaitingAnimation,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)('div', {
+                                    style: { padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' },
+                                    children: [
+                                        (0, i.jsx)(c.Caption, {
+                                            type: 'controls',
+                                            variant: 'div',
+                                            size: 'm',
+                                            weight: 'medium',
+                                            children: 'Сброс настроек',
+                                        }),
+                                        (0, i.jsx)(c.Caption, {
+                                            type: 'controls',
+                                            variant: 'div',
+                                            size: 's',
+                                            style: { opacity: 0.6, marginBottom: '8px' },
+                                            children: 'Вернуть все настройки оверлея к стандартным значениям',
+                                        }),
+                                        (0, i.jsx)(g.Button, {
+                                            color: 'secondary',
+                                            radius: 'xxxl',
+                                            size: 'm',
+                                            onClick: onResetSettings,
+                                            disabled: !isOverlayEnabled,
+                                            children: 'Сбросить настройки',
                                         }),
                                     ],
                                 }),
@@ -2263,12 +2602,18 @@
                     { notify: j } = (0, _.lkh)(),
                     { formatMessage: C } = (0, r.A)(),
                     [overlayModalOpened, setOverlayModalOpened] = (0, d.useState)(false),
+                    [isOverlayEnabled, setIsOverlayEnabled] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.enable') ?? false),
                     overlaySettingsModal = {
                         isOpened: overlayModalOpened,
                         onOpenChange: setOverlayModalOpened,
                         open: () => setOverlayModalOpened(true),
                         close: () => setOverlayModalOpened(false),
                     },
+                    onOverlayEnableToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.enable toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.enable', e);
+                        setIsOverlayEnabled(e);
+                    }, []),
                     b = (() => {
                         let e = (0, _.NFA)().get(_.twC),
                             t = (0, _._lF)(e.oldWebHost),
@@ -2643,11 +2988,21 @@
                             }),
                             (0, i.jsx)('li', {
                                 className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Включить оверлей',
+                                    description: 'Отображает информацию о текущем треке поверх других окон',
+                                    onChange: onOverlayEnableToggle,
+                                    isChecked: isOverlayEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
                                 children: [
                                     (0, i.jsx)(S, {
-                                        title: 'Оверлей',
-                                        description: 'Настройки отображения информации трека поверх других окон',
+                                        title: 'Настройки оверлея',
+                                        description: 'Конфигурация отображаемой информации в оверлее',
                                         onClick: overlaySettingsModal.open,
+                                        disabled: !isOverlayEnabled,
                                     }),
                                     (0, i.jsx)(overlaySettings, { modal: overlaySettingsModal }),
                                 ],
