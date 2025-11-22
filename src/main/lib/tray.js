@@ -202,8 +202,23 @@ const createContextMenu = (window) => {
     }
     return electron_1.Menu.buildFromTemplate(template);
 };
+const getMainWindow = (window) => {
+    if (window && !window.isDestroyed()) {
+        if (typeof window.isClosable === 'function' && !window.isClosable()) {
+            const allWindows = electron_1.BrowserWindow.getAllWindows();
+            const mainWindow = allWindows.find(win => 
+                !win.isDestroyed() && 
+                typeof win.isClosable === 'function' &&
+                win.isClosable()
+            );
+            return mainWindow || window;
+        }
+    }
+    return window;
+};
 const updateTrayMenu = (window) => {
-    tray?.setContextMenu(createContextMenu(window));
+    const mainWindow = getMainWindow(window);
+    tray?.setContextMenu(createContextMenu(mainWindow));
 };
 exports.updateTrayMenu = updateTrayMenu;
 const setupTray = (window) => {
