@@ -186,6 +186,7 @@ const init = () => {
       coverSize: 65,
       draggable: false,
       lyricsBlockSeparated: true,
+      reverseBlocks: false,
       coverPosition: 'left',
       textAlign: 'left',
       showCover: true,
@@ -199,6 +200,7 @@ const init = () => {
       lyricsFontSize: 18,
       lyricsLineSpacing: 5,
       showWaitingAnimation: true,
+      invertLyricsScroll: false,
     },
     globalShortcuts: {
       enable: true,

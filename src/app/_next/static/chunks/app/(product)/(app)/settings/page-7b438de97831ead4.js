@@ -269,7 +269,7 @@
                 M = o(71154),
                 w = o.n(M);
             let S = (e) => {
-                let { title: t, description: o, onClick: n, descriptionProps: r, ...l } = e;
+                let { title: t, description: o, onClick: n, descriptionProps: r, disabled: disabled, ...l } = e;
                 return (0, i.jsx)(g.Button, {
                     className: (0, N.$)(w().root, w().important),
                     contentContainerClassName: w().contentContainer,
@@ -277,14 +277,17 @@
                         className: w().icon,
                         size: 'xs',
                         variant: 'arrowRight',
+                        style: disabled ? { opacity: 0.5 } : {},
                     }),
                     iconPosition: 'right',
-                    onClick: n,
+                    onClick: disabled ? undefined : n,
                     isBlock: !0,
                     withRipple: !1,
                     withHover: !1,
                     variant: 'text',
                     size: 'xs',
+                    disabled: disabled,
+                    style: disabled ? { opacity: 0.5, cursor: 'not-allowed' } : {},
                     ...l,
                     children: (0, i.jsxs)('div', {
                         className: w().content,
@@ -295,6 +298,7 @@
                                 size: 'l',
                                 weight: 'bold',
                                 lineClamp: 1,
+                                style: disabled ? { opacity: 0.5 } : {},
                                 children: t,
                             }),
                             o &&
@@ -304,6 +308,7 @@
                                     size: 'xs',
                                     weight: 'medium',
                                     className: w().description,
+                                    style: disabled ? { opacity: 0.5 } : {},
                                     ...r,
                                     children: o,
                                 }),
@@ -1626,11 +1631,14 @@
                     [showBorder, setShowBorder] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.showBorder') ?? true),
                     [showMainBlock, setShowMainBlock] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.showMainBlock') ?? true),
                     [roundedCorners, setRoundedCorners] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.roundedCorners') ?? true),
+                    [showLyrics, setShowLyrics] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.showLyrics') ?? true),
                     [titleFontSize, setTitleFontSize] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.titleFontSize') ?? 16),
                     [artistFontSize, setArtistFontSize] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.artistFontSize') ?? 14),
                     [lyricsFontSize, setLyricsFontSize] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.lyricsFontSize') ?? 18),
                     [lyricsLineSpacing, setLyricsLineSpacing] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.lyricsLineSpacing') ?? 5),
                     [showWaitingAnimation, setShowWaitingAnimation] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.showWaitingAnimation') ?? true),
+                    [reverseBlocks, setReverseBlocks] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.reverseBlocks') ?? false),
+                    [invertLyricsScroll, setInvertLyricsScroll] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.invertLyricsScroll') ?? false),
                     [activeTab, setActiveTab] = (0, d.useState)('main'),
                     onOverlayEnableToggle = (0, d.useCallback)(async (e) => {
                         console.log('modFeatures.overlay.enable toggled. Value: ', e);
@@ -1640,10 +1648,21 @@
                     onShowLyricsToggle = (0, d.useCallback)(async (e) => {
                         console.log('modFeatures.overlay.showLyrics toggled. Value: ', e);
                         window.nativeSettings.set('modFeatures.overlay.showLyrics', e);
+                        setShowLyrics(e);
                     }, []),
                     onLyricsBlockSeparatedToggle = (0, d.useCallback)(async (e) => {
                         console.log('modFeatures.overlay.lyricsBlockSeparated toggled. Value: ', e);
                         window.nativeSettings.set('modFeatures.overlay.lyricsBlockSeparated', e);
+                    }, []),
+                    onReverseBlocksToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.reverseBlocks toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.reverseBlocks', e);
+                        setReverseBlocks(e);
+                    }, []),
+                    onInvertLyricsScrollToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.invertLyricsScroll toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.invertLyricsScroll', e);
+                        setInvertLyricsScroll(e);
                     }, []),
                     onOpacityChange = (0, d.useCallback)(async (e) => {
                         let value = Math.min(Math.max(e, 0), 100);
@@ -1748,6 +1767,7 @@
                         const currentPosition = window.nativeSettings.get('modFeatures.overlay.position');
                         
                         window.nativeSettings.set('modFeatures.overlay.showLyrics', true);
+                        setShowLyrics(true);
                         window.nativeSettings.set('modFeatures.overlay.opacity', 75);
                         setOpacity(75);
                         window.nativeSettings.set('modFeatures.overlay.bgColor', '#000000');
@@ -1759,6 +1779,8 @@
                         window.nativeSettings.set('modFeatures.overlay.draggable', false);
                         setDraggable(false);
                         window.nativeSettings.set('modFeatures.overlay.lyricsBlockSeparated', true);
+                        window.nativeSettings.set('modFeatures.overlay.reverseBlocks', false);
+                        setReverseBlocks(false);
                         window.nativeSettings.set('modFeatures.overlay.coverPosition', 'left');
                         setCoverPosition('left');
                         window.nativeSettings.set('modFeatures.overlay.textAlign', 'left');
@@ -1785,6 +1807,8 @@
                         setLyricsLineSpacing(5);
                         window.nativeSettings.set('modFeatures.overlay.showWaitingAnimation', true);
                         setShowWaitingAnimation(true);
+                        window.nativeSettings.set('modFeatures.overlay.invertLyricsScroll', false);
+                        setInvertLyricsScroll(false);
                         
                         window.nativeSettings.set('modFeatures.overlay.enable', currentEnabled);
                         window.nativeSettings.set('modFeatures.overlay.position', currentPosition);
@@ -1835,6 +1859,36 @@
                                     description: 'Отображать текст в отдельном блоке с отступом',
                                     onChange: onLyricsBlockSeparatedToggle,
                                     isChecked: window.nativeSettings.get('modFeatures.overlay.lyricsBlockSeparated'),
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Поменять блоки местами',
+                                    description: 'Текст песни сверху, основной блок снизу',
+                                    onChange: onReverseBlocksToggle,
+                                    isChecked: reverseBlocks,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Показывать рамку',
+                                    description: 'Отображать рамку вокруг оверлея',
+                                    onChange: onShowBorderToggle,
+                                    isChecked: showBorder,
+                                    disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Закругленные углы',
+                                    description: 'Использовать закругленные углы для оверлея',
+                                    onChange: onRoundedCornersToggle,
+                                    isChecked: roundedCorners,
                                     disabled: !isOverlayEnabled,
                                 }),
                             }),
@@ -1941,7 +1995,7 @@
                                     description: 'Выравнивание названия песни и исполнителей',
                                     onChange: onTextAlignChange,
                                     value: textAlign,
-                                    disabled: !isOverlayEnabled,
+                                    disabled: !isOverlayEnabled || !showMainBlock,
                                     options: [
                                         { value: 'left', label: 'По левому краю' },
                                         { value: 'center', label: 'По центру' },
@@ -1952,31 +2006,11 @@
                             activeTab === 'main' && (0, i.jsx)('li', {
                                 className: B().item,
                                 children: (0, i.jsx)(P, {
-                                    title: 'Показывать рамку',
-                                    description: 'Отображать рамку вокруг оверлея',
-                                    onChange: onShowBorderToggle,
-                                    isChecked: showBorder,
-                                    disabled: !isOverlayEnabled,
-                                }),
-                            }),
-                            activeTab === 'main' && (0, i.jsx)('li', {
-                                className: B().item,
-                                children: (0, i.jsx)(P, {
-                                    title: 'Закругленные углы',
-                                    description: 'Использовать закругленные углы для оверлея',
-                                    onChange: onRoundedCornersToggle,
-                                    isChecked: roundedCorners,
-                                    disabled: !isOverlayEnabled,
-                                }),
-                            }),
-                            activeTab === 'main' && (0, i.jsx)('li', {
-                                className: B().item,
-                                children: (0, i.jsx)(P, {
                                     title: 'Показывать обложку',
                                     description: 'Отображать обложку трека в оверлее',
                                     onChange: onShowCoverToggle,
                                     isChecked: showCover,
-                                    disabled: !isOverlayEnabled,
+                                    disabled: !isOverlayEnabled || !showMainBlock,
                                 }),
                             }),
                             activeTab === 'main' && (0, i.jsx)('li', {
@@ -1986,7 +2020,7 @@
                                     description: 'Переместить обложку в правую сторону блока',
                                     onChange: onCoverPositionToggle,
                                     isChecked: coverPosition === 'right',
-                                    disabled: !isOverlayEnabled,
+                                    disabled: !isOverlayEnabled || !showMainBlock || !showCover,
                                 }),
                             }),
                             activeTab === 'main' && (0, i.jsx)('li', {
@@ -1999,7 +2033,7 @@
                                     maxValue: 120,
                                     minValue: 40,
                                     step: 5,
-                                    disabled: !isOverlayEnabled,
+                                    disabled: !isOverlayEnabled || !showMainBlock || !showCover,
                                 }),
                             }),
                             activeTab === 'main' && (0, i.jsx)('li', {
@@ -2009,7 +2043,7 @@
                                     description: 'Отображать название трека в оверлее',
                                     onChange: onShowTitleToggle,
                                     isChecked: showTitle,
-                                    disabled: !isOverlayEnabled,
+                                    disabled: !isOverlayEnabled || !showMainBlock,
                                 }),
                             }),
                             activeTab === 'main' && (0, i.jsx)('li', {
@@ -2022,7 +2056,7 @@
                                     maxValue: 32,
                                     minValue: 10,
                                     step: 1,
-                                    disabled: !isOverlayEnabled,
+                                    disabled: !isOverlayEnabled || !showMainBlock || !showTitle,
                                 }),
                             }),
                             activeTab === 'main' && (0, i.jsx)('li', {
@@ -2032,7 +2066,7 @@
                                     description: 'Отображать исполнителей трека в оверлее',
                                     onChange: onShowArtistToggle,
                                     isChecked: showArtist,
-                                    disabled: !isOverlayEnabled,
+                                    disabled: !isOverlayEnabled || !showMainBlock,
                                 }),
                             }),
                             activeTab === 'main' && (0, i.jsx)('li', {
@@ -2045,7 +2079,7 @@
                                     maxValue: 28,
                                     minValue: 10,
                                     step: 1,
-                                    disabled: !isOverlayEnabled,
+                                    disabled: !isOverlayEnabled || !showMainBlock || !showArtist,
                                 }),
                             }),
                             activeTab === 'lyrics' && (0, i.jsx)('li', {
@@ -2054,8 +2088,18 @@
                                     title: 'Показывать текст песни',
                                     description: 'Отображает текст текущей песни в оверлее',
                                     onChange: onShowLyricsToggle,
-                                    isChecked: window.nativeSettings.get('modFeatures.overlay.showLyrics'),
+                                    isChecked: showLyrics,
                                     disabled: !isOverlayEnabled,
+                                }),
+                            }),
+                            activeTab === 'lyrics' && (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Инвертировать прокрутку текста',
+                                    description: 'Текст прокручивается сверху вниз вместо снизу вверх',
+                                    onChange: onInvertLyricsScrollToggle,
+                                    isChecked: invertLyricsScroll,
+                                    disabled: !isOverlayEnabled || !showLyrics,
                                 }),
                             }),
                             activeTab === 'lyrics' && (0, i.jsx)('li', {
@@ -2068,7 +2112,7 @@
                                     maxValue: 36,
                                     minValue: 12,
                                     step: 1,
-                                    disabled: !isOverlayEnabled,
+                                    disabled: !isOverlayEnabled || !showLyrics,
                                 }),
                             }),
                             activeTab === 'lyrics' && (0, i.jsx)('li', {
@@ -2081,7 +2125,7 @@
                                     maxValue: 30,
                                     minValue: 0,
                                     step: 1,
-                                    disabled: !isOverlayEnabled,
+                                    disabled: !isOverlayEnabled || !showLyrics,
                                 }),
                             }),
                             activeTab === 'lyrics' && (0, i.jsx)('li', {
@@ -2091,7 +2135,7 @@
                                     description: 'Показывать анимацию точек и отсчет перед началом текста песни',
                                     onChange: onShowWaitingAnimationToggle,
                                     isChecked: showWaitingAnimation,
-                                    disabled: !isOverlayEnabled,
+                                    disabled: !isOverlayEnabled || !showLyrics,
                                 }),
                             }),
                             (0, i.jsx)('li', {

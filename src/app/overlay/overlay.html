@@ -105,6 +105,15 @@
       margin-top: 0;
     }
 
+    .overlay-container.separated.reversed .lyrics-block {
+      margin-top: 0;
+      margin-bottom: calc(8px * var(--ui-scale));
+    }
+
+    .overlay-container.separated.reversed .main-block {
+      margin-bottom: 0;
+    }
+
     .overlay-container.merged.has-lyrics .main-block {
       border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
@@ -115,6 +124,34 @@
       border-top-left-radius: 0;
       border-top-right-radius: 0;
       border-top: none;
+    }
+
+    .overlay-container.merged.has-lyrics.reversed .main-block {
+      border-bottom-left-radius: calc(12px * var(--ui-scale));
+      border-bottom-right-radius: calc(12px * var(--ui-scale));
+      border-bottom: calc(1px * var(--ui-scale)) solid rgba(255, 255, 255, 0.1);
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      border-top: none;
+    }
+
+    .overlay-container.merged.has-lyrics.reversed .lyrics-block {
+      border-top-left-radius: calc(12px * var(--ui-scale));
+      border-top-right-radius: calc(12px * var(--ui-scale));
+      border-top: calc(1px * var(--ui-scale)) solid rgba(255, 255, 255, 0.1);
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-bottom: none;
+    }
+
+    .overlay-container.merged.has-lyrics.reversed .main-block.no-border {
+      border-bottom: none;
+      border-top: none;
+    }
+
+    .overlay-container.merged.has-lyrics.reversed .lyrics-block.no-border {
+      border-top: none;
+      border-bottom: none;
     }
 
     .track-cover {
@@ -231,6 +268,11 @@
       align-items: center;
       padding: calc(85px * var(--ui-scale)) calc(20px * var(--ui-scale)) calc(200px * var(--ui-scale));
       gap: calc(5px * var(--ui-scale));
+    }
+
+    .lyrics-scroller.inverted {
+      flex-direction: column-reverse;
+      padding: calc(200px * var(--ui-scale)) calc(20px * var(--ui-scale)) calc(85px * var(--ui-scale));
     }
 
     .lyrics-scroller::-webkit-scrollbar {
@@ -426,11 +468,13 @@
       showBorder: true,
       showMainBlock: true,
       roundedCorners: true,
+      reverseBlocks: false,
       titleFontSize: 16,
       artistFontSize: 14,
       lyricsFontSize: 18,
       lyricsLineSpacing: 5,
       showWaitingAnimation: true,
+      invertLyricsScroll: false,
     };
 
     let isDragging = false;
@@ -575,6 +619,14 @@
         trackCover.classList.remove('no-rounded');
       }
 
+      if (currentSettings.reverseBlocks) {
+        overlayContainer.style.flexDirection = 'column-reverse';
+        overlayContainer.classList.add('reversed');
+      } else {
+        overlayContainer.style.flexDirection = 'column';
+        overlayContainer.classList.remove('reversed');
+      }
+
       if (currentSettings.titleFontSize) {
         const scale = parseFloat(getComputedStyle(document.body).getPropertyValue('--ui-scale')) || 1;
         trackTitle.style.fontSize = (currentSettings.titleFontSize * scale) + 'px';
@@ -599,6 +651,12 @@
         if (lyricsScroller) {
           lyricsScroller.style.gap = (currentSettings.lyricsLineSpacing * scale) + 'px';
         }
+      }
+
+      if (currentSettings.invertLyricsScroll) {
+        lyricsScroller.classList.add('inverted');
+      } else {
+        lyricsScroller.classList.remove('inverted');
       }
     }
 
@@ -742,7 +800,8 @@
         });
 
         if (currentSettings.showWaitingAnimation !== false) {
-          waitingContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const scrollBlock = currentSettings.invertLyricsScroll ? 'end' : 'start';
+          waitingContainer.scrollIntoView({ behavior: 'smooth', block: scrollBlock });
         }
         return;
       }
@@ -767,7 +826,8 @@
         });
 
         if (currentSettings.showWaitingAnimation !== false) {
-          waitingContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const scrollBlock = currentSettings.invertLyricsScroll ? 'end' : 'start';
+          waitingContainer.scrollIntoView({ behavior: 'smooth', block: scrollBlock });
         }
         return;
       }
@@ -803,9 +863,10 @@
 
       if (activeIndex !== -1 && activeIndex !== lastActiveIndex && lyricsLines[activeIndex]) {
         lastActiveIndex = activeIndex;
+        const scrollBlock = currentSettings.invertLyricsScroll ? 'end' : 'start';
         lyricsLines[activeIndex].scrollIntoView({
           behavior: 'smooth',
-          block: 'start'
+          block: scrollBlock
         });
       }
     }
