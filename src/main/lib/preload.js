@@ -187,6 +187,77 @@ electron_1.contextBridge.exposeInMainWorld("zoomControl", {
     electron_1.ipcRenderer.invoke("set-zoom-level", level),
 });
 
+// Player API
+electron_1.contextBridge.exposeInMainWorld("playerAPI", {
+  getFullState: () => electron_1.ipcRenderer.invoke("player-api-get-full-state"),
+  
+  getTrack: () => electron_1.ipcRenderer.invoke("player-api-get-track"),
+  getPlayback: () => electron_1.ipcRenderer.invoke("player-api-get-playback"),
+  getSettings: () => electron_1.ipcRenderer.invoke("player-api-get-settings"),
+  getContext: () => electron_1.ipcRenderer.invoke("player-api-get-context"),
+  getQueue: () => electron_1.ipcRenderer.invoke("player-api-get-queue"),
+  
+  isLiked: (trackId) => electron_1.ipcRenderer.invoke("player-api-is-liked", trackId),
+  
+  getLyrics: (trackId) => electron_1.ipcRenderer.invoke("player-api-get-lyrics", trackId),
+
+  getCached: () => electron_1.ipcRenderer.invoke("player-api-get-cached"),
+
+  getTrackTitle: () => electron_1.ipcRenderer.invoke("player-api-get-track-title"),
+  getTrackArtists: () => electron_1.ipcRenderer.invoke("player-api-get-track-artists"),
+  getTrackAlbum: () => electron_1.ipcRenderer.invoke("player-api-get-track-album"),
+  getTrackCover: (size) => electron_1.ipcRenderer.invoke("player-api-get-track-cover", size),
+  getTrackDuration: () => electron_1.ipcRenderer.invoke("player-api-get-track-duration"),
+  getCurrentProgress: () => electron_1.ipcRenderer.invoke("player-api-get-current-progress"),
+  getCurrentVolume: () => electron_1.ipcRenderer.invoke("player-api-get-current-volume"),
+  isShuffleEnabled: () => electron_1.ipcRenderer.invoke("player-api-is-shuffle-enabled"),
+  getRepeatMode: () => electron_1.ipcRenderer.invoke("player-api-get-repeat-mode"),
+  isPlaying: () => electron_1.ipcRenderer.invoke("player-api-is-playing"),
+  getCurrentPlaylistName: () => electron_1.ipcRenderer.invoke("player-api-get-current-playlist-name"),
+
+  getAlbumYear: () => electron_1.ipcRenderer.invoke("player-api-get-album-year"),
+  getAlbumReleaseDate: () => electron_1.ipcRenderer.invoke("player-api-get-album-release-date"),
+  getAlbumCover: (size) => electron_1.ipcRenderer.invoke("player-api-get-album-cover", size),
+
+  getArtistCover: (size, artistIndex) => electron_1.ipcRenderer.invoke("player-api-get-artist-cover", size, artistIndex),
+
+  getTrackBackgroundVideo: () => electron_1.ipcRenderer.invoke("player-api-get-track-background-video"),
+
+  onStateUpdate: (callback) => {
+    const listener = (event, data) => callback(data);
+    electron_1.ipcRenderer.on(events_js_1.Events.PLAYER_STATE, listener);
+    return () => electron_1.ipcRenderer.off(events_js_1.Events.PLAYER_STATE, listener);
+  }
+});
+
+// Player Control
+electron_1.contextBridge.exposeInMainWorld("playerControl", {
+  togglePlay: () => electron_1.ipcRenderer.invoke("player-control-toggle-play"),
+  play: () => electron_1.ipcRenderer.invoke("player-control-play"),
+  pause: () => electron_1.ipcRenderer.invoke("player-control-pause"),
+  next: () => electron_1.ipcRenderer.invoke("player-control-next"),
+  previous: () => electron_1.ipcRenderer.invoke("player-control-previous"),
+
+  seek: (positionSeconds) => electron_1.ipcRenderer.invoke("player-control-seek", positionSeconds),
+
+  setVolume: (volume) => electron_1.ipcRenderer.invoke("player-control-set-volume", volume),
+
+  toggleShuffle: () => electron_1.ipcRenderer.invoke("player-control-toggle-shuffle"),
+  setShuffle: (enabled) => electron_1.ipcRenderer.invoke("player-control-set-shuffle", enabled),
+
+  toggleRepeat: () => electron_1.ipcRenderer.invoke("player-control-toggle-repeat"),
+  setRepeat: (mode) => electron_1.ipcRenderer.invoke("player-control-set-repeat", mode),
+
+  toggleLike: () => electron_1.ipcRenderer.invoke("player-control-toggle-like"),
+  like: () => electron_1.ipcRenderer.invoke("player-control-like"),
+  unlike: () => electron_1.ipcRenderer.invoke("player-control-unlike"),
+  dislike: () => electron_1.ipcRenderer.invoke("player-control-dislike"),
+
+  playTrack: (trackId, albumId) => electron_1.ipcRenderer.invoke("player-control-play-track", trackId, albumId),
+  playAlbum: (albumId) => electron_1.ipcRenderer.invoke("player-control-play-album", albumId),
+  playPlaylist: (uid, kind) => electron_1.ipcRenderer.invoke("player-control-play-playlist", uid, kind)
+});
+
 
 
 electron_1.contextBridge.exposeInMainWorld('loadWorker', (workerName) => {

@@ -1613,6 +1613,91 @@
                 });
             });
 
+            let fullscreenSettings = (0, n.PA)(({ modal: fullscreenSettingsModal, currentStyle: propStyle }) => {
+                let { formatMessage: e } = (0, r.A)(),
+                    { notify: j } = (0, _.lkh)();
+                const currentStyle = propStyle ?? 'default';
+                const defaults = {
+                    enhanced: { showIcons: false, progressBarDisplay: 'always', playerControls: 'always', extraControls: 'always', showAlbum: 'date', contextDisplay: 'mousemove', volumeDisplay: 'smart', backgroundChoice: 'album_art', useBackgroundVideo: false, staticBackColor: '#000000', backgroundBlur: 32, backgroundBrightness: 70, invertColors: 'never' },
+                    tv: { showIcons: true, progressBarDisplay: 'never', playerControls: 'never', extraControls: 'never', showAlbum: 'date', contextDisplay: 'always', volumeDisplay: 'smart', backgroundChoice: 'artist_art', useBackgroundVideo: false, staticBackColor: '#000000', backgroundBlur: 0, backgroundBrightness: 40, invertColors: 'never' },
+                    default: { showIcons: false, progressBarDisplay: 'always', playerControls: 'always', extraControls: 'always', showAlbum: 'date', contextDisplay: 'mousemove', volumeDisplay: 'smart', backgroundChoice: 'album_art', useBackgroundVideo: false, staticBackColor: '#000000', backgroundBlur: 32, backgroundBrightness: 70, invertColors: 'never' }
+                };
+                const getKey = (s) => `modFeatures.fullscreen.${currentStyle}.${s}`;
+                const getDef = (s) => defaults[currentStyle]?.[s] ?? defaults.enhanced[s];
+                const [showIcons, setShowIcons] = (0, d.useState)(window.nativeSettings.get(getKey('showIcons')) ?? getDef('showIcons'));
+                const [progressBar, setProgressBar] = (0, d.useState)(window.nativeSettings.get(getKey('progressBarDisplay')) ?? getDef('progressBarDisplay'));
+                const [playerControls, setPlayerControls] = (0, d.useState)(window.nativeSettings.get(getKey('playerControls')) ?? getDef('playerControls'));
+                const [extraControls, setExtraControls] = (0, d.useState)(window.nativeSettings.get(getKey('extraControls')) ?? getDef('extraControls'));
+                const [showAlbum, setShowAlbum] = (0, d.useState)(window.nativeSettings.get(getKey('showAlbum')) ?? getDef('showAlbum'));
+                const [contextDisplay, setContextDisplay] = (0, d.useState)(window.nativeSettings.get(getKey('contextDisplay')) ?? getDef('contextDisplay'));
+                const [volumeDisplay, setVolumeDisplay] = (0, d.useState)(window.nativeSettings.get(getKey('volumeDisplay')) ?? getDef('volumeDisplay'));
+                const [backgroundChoice, setBackgroundChoice] = (0, d.useState)(window.nativeSettings.get(getKey('backgroundChoice')) ?? getDef('backgroundChoice'));
+                const [useBackgroundVideo, setUseBackgroundVideo] = (0, d.useState)(window.nativeSettings.get(getKey('useBackgroundVideo')) ?? getDef('useBackgroundVideo'));
+                const [staticColor, setStaticColor] = (0, d.useState)(window.nativeSettings.get(getKey('staticBackColor')) ?? getDef('staticBackColor'));
+                const [backgroundBlur, setBackgroundBlur] = (0, d.useState)(window.nativeSettings.get(getKey('backgroundBlur')) ?? getDef('backgroundBlur'));
+                const [backgroundBrightness, setBackgroundBrightness] = (0, d.useState)(window.nativeSettings.get(getKey('backgroundBrightness')) ?? getDef('backgroundBrightness'));
+                const [invertColors, setInvertColors] = (0, d.useState)(window.nativeSettings.get(getKey('invertColors')) ?? getDef('invertColors'));
+                
+                (0, d.useEffect)(() => {
+                    const getKeyEffect = (s) => `modFeatures.fullscreen.${currentStyle}.${s}`;
+                    const getDefEffect = (s) => defaults[currentStyle]?.[s] ?? defaults.enhanced[s];
+                    setShowIcons(window.nativeSettings.get(getKeyEffect('showIcons')) ?? getDefEffect('showIcons'));
+                    setProgressBar(window.nativeSettings.get(getKeyEffect('progressBarDisplay')) ?? getDefEffect('progressBarDisplay'));
+                    setPlayerControls(window.nativeSettings.get(getKeyEffect('playerControls')) ?? getDefEffect('playerControls'));
+                    setExtraControls(window.nativeSettings.get(getKeyEffect('extraControls')) ?? getDefEffect('extraControls'));
+                    setShowAlbum(window.nativeSettings.get(getKeyEffect('showAlbum')) ?? getDefEffect('showAlbum'));
+                    setContextDisplay(window.nativeSettings.get(getKeyEffect('contextDisplay')) ?? getDefEffect('contextDisplay'));
+                    setVolumeDisplay(window.nativeSettings.get(getKeyEffect('volumeDisplay')) ?? getDefEffect('volumeDisplay'));
+                    setBackgroundChoice(window.nativeSettings.get(getKeyEffect('backgroundChoice')) ?? getDefEffect('backgroundChoice'));
+                    setUseBackgroundVideo(window.nativeSettings.get(getKeyEffect('useBackgroundVideo')) ?? getDefEffect('useBackgroundVideo'));
+                    setStaticColor(window.nativeSettings.get(getKeyEffect('staticBackColor')) ?? getDefEffect('staticBackColor'));
+                    setBackgroundBlur(window.nativeSettings.get(getKeyEffect('backgroundBlur')) ?? getDefEffect('backgroundBlur'));
+                    setBackgroundBrightness(window.nativeSettings.get(getKeyEffect('backgroundBrightness')) ?? getDefEffect('backgroundBrightness'));
+                    setInvertColors(window.nativeSettings.get(getKeyEffect('invertColors')) ?? getDefEffect('invertColors'));
+                }, [currentStyle]);
+                
+                const resetToDefaults = (0, d.useCallback)(() => {
+                    Object.keys(defaults[currentStyle]).forEach(key => window.nativeSettings.set(getKey(key), defaults[currentStyle][key]));
+                    setShowIcons(getDef('showIcons')); setProgressBar(getDef('progressBarDisplay')); setPlayerControls(getDef('playerControls')); setExtraControls(getDef('extraControls')); setShowAlbum(getDef('showAlbum')); setContextDisplay(getDef('contextDisplay')); setVolumeDisplay(getDef('volumeDisplay')); setBackgroundChoice(getDef('backgroundChoice')); setUseBackgroundVideo(getDef('useBackgroundVideo')); setStaticColor(getDef('staticBackColor')); setBackgroundBlur(getDef('backgroundBlur')); setBackgroundBrightness(getDef('backgroundBrightness')); setInvertColors(getDef('invertColors'));
+                    j((0, i.jsx)(m.$W, { message: (0, i.jsx)(c.Caption, { variant: 'div', type: 'controls', size: 'm', children: 'Настройки полноэкранного плеера сброшены до стандартных значений' }) }), { containerId: _.uQT.INFO });
+                }, [currentStyle, j]);
+                
+                if (currentStyle === 'default') return null;
+                
+                return (0, i.jsxs)(p.a, {
+                    className: H().root,
+                    style: { 'max-width': '34.375rem' },
+                    title: 'Полноэкранный плеер',
+                    headerClassName: H().modalHeader,
+                    contentClassName: H().modalContent,
+                    open: fullscreenSettingsModal.isOpened,
+                    onOpenChange: fullscreenSettingsModal.onOpenChange,
+                    onClose: fullscreenSettingsModal.close,
+                    size: 'fitContent',
+                    placement: 'center',
+                    labelClose: e({ id: 'interface-actions.close' }),
+                    children: [(0, i.jsxs)('ul', {
+                        className: `${B().root} ${H().list}`,
+                        style: { width: '32.125rem', 'max-height': '37.5rem', gap: 0 },
+                        children: [
+                            (0, i.jsx)('li', { className: B().item, children: (0, i.jsx)(P, { title: 'Показывать иконки', description: 'Отображать иконки рядом с названием трека, артистом и альбомом', onChange: (e) => { window.nativeSettings.set(getKey('showIcons'), e); setShowIcons(e); window.reloadFullscreenSettings?.(); }, isChecked: showIcons }) }),
+                            (0, i.jsx)('li', { className: B().item, children: (0, i.jsx)(settingBarWithDropdown, { title: 'Полоса воспроизведения', onChange: (e) => { window.nativeSettings.set(getKey('progressBarDisplay'), e); setProgressBar(e); window.reloadFullscreenSettings?.(); }, value: progressBar, direction: 'bottom', options: [{ value: 'never', label: 'Никогда' }, { value: 'mousemove', label: 'При движении мыши' }, { value: 'always', label: 'Всегда' }] }) }),
+                            (0, i.jsx)('li', { className: B().item, children: (0, i.jsx)(settingBarWithDropdown, { title: 'Элементы управления воспроизведением', onChange: (e) => { window.nativeSettings.set(getKey('playerControls'), e); setPlayerControls(e); window.reloadFullscreenSettings?.(); }, value: playerControls, direction: 'bottom', options: [{ value: 'never', label: 'Никогда' }, { value: 'mousemove', label: 'При движении мыши' }, { value: 'always', label: 'Всегда' }] }) }),
+                            (0, i.jsx)('li', { className: B().item, children: (0, i.jsx)(settingBarWithDropdown, { title: 'Дополнительные элементы управления', onChange: (e) => { window.nativeSettings.set(getKey('extraControls'), e); setExtraControls(e); window.reloadFullscreenSettings?.(); }, value: extraControls, direction: 'bottom', options: [{ value: 'never', label: 'Никогда' }, { value: 'mousemove', label: 'При движении мыши' }, { value: 'always', label: 'Всегда' }] }) }),
+                            (0, i.jsx)('li', { className: B().item, children: (0, i.jsx)(settingBarWithDropdown, { title: 'Отображать альбом', onChange: (e) => { window.nativeSettings.set(getKey('showAlbum'), e); setShowAlbum(e); window.reloadFullscreenSettings?.(); }, value: showAlbum, direction: 'bottom', options: [{ value: 'never', label: 'Никогда' }, { value: 'always', label: 'Всегда' }, { value: 'date', label: 'Отображать с датой релиза' }] }) }),
+                            (0, i.jsx)('li', { className: B().item, children: (0, i.jsx)(settingBarWithDropdown, { title: 'Отображение контекста воспроизведения', onChange: (e) => { window.nativeSettings.set(getKey('contextDisplay'), e); setContextDisplay(e); window.reloadFullscreenSettings?.(); }, value: contextDisplay, direction: 'bottom', options: [{ value: 'never', label: 'Никогда' }, { value: 'mousemove', label: 'При движении мыши' }, { value: 'always', label: 'Всегда' }] }) }),
+                            (0, i.jsx)('li', { className: B().item, children: (0, i.jsx)(settingBarWithDropdown, { title: 'Отображать полосу громкости', onChange: (e) => { window.nativeSettings.set(getKey('volumeDisplay'), e); setVolumeDisplay(e); window.reloadFullscreenSettings?.(); }, value: volumeDisplay, direction: 'bottom', options: [{ value: 'never', label: 'Никогда' }, { value: 'always', label: 'Всегда' }, { value: 'smart', label: 'Умный режим' }] }) }),
+                            (0, i.jsx)('li', { className: B().item, children: (0, i.jsx)(settingBarWithDropdown, { title: 'Задний фон', onChange: (e) => { window.nativeSettings.set(getKey('backgroundChoice'), e); setBackgroundChoice(e); window.reloadFullscreenSettings?.(); }, value: backgroundChoice, direction: 'bottom', options: [{ value: 'album_art', label: 'Обложка альбома' }, { value: 'artist_art', label: 'Обложка исполнителя' }, { value: 'dynamic_color', label: 'Динамическая заливка' }, { value: 'static_color', label: 'Статическая заливка' }] }) }),
+                            (backgroundChoice === 'album_art' || backgroundChoice === 'artist_art') && (0, i.jsx)('li', { className: B().item, children: (0, i.jsx)(P, { title: 'Использовать видео фон', description: 'Если доступно, использовать видео вместо статичной обложки', onChange: (e) => { window.nativeSettings.set(getKey('useBackgroundVideo'), e); setUseBackgroundVideo(e); window.reloadFullscreenSettings?.(); }, isChecked: useBackgroundVideo }) }),
+                            backgroundChoice === 'static_color' && (0, i.jsx)('li', { className: B().item, children: (0, i.jsxs)('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0' }, children: [(0, i.jsx)(c.Caption, { type: 'controls', variant: 'div', size: 'm', children: 'Цвет фона' }), (0, i.jsx)('input', { type: 'color', value: staticColor, onChange: (e) => { window.nativeSettings.set(getKey('staticBackColor'), e.target.value); setStaticColor(e.target.value); window.reloadFullscreenSettings?.(); }, style: { width: '60px', height: '32px', border: 'none', borderRadius: '8px', cursor: 'pointer' } })] }) }),
+                            (0, i.jsx)('li', { className: B().item, children: (0, i.jsx)(settingBarWithSlider, { title: 'Размытие фона', description: 'От 0px до 100px', onChange: (e) => { window.nativeSettings.set(getKey('backgroundBlur'), e); setBackgroundBlur(e); window.reloadFullscreenSettings?.(); }, value: backgroundBlur, minValue: 0, maxValue: 100, step: 4, disabled: backgroundChoice === 'dynamic_color' || backgroundChoice === 'static_color' }) }),
+                            (0, i.jsx)('li', { className: B().item, children: (0, i.jsx)(settingBarWithSlider, { title: 'Яркость фона', description: 'От 0% до 100%', onChange: (e) => { window.nativeSettings.set(getKey('backgroundBrightness'), e); setBackgroundBrightness(e); window.reloadFullscreenSettings?.(); }, value: backgroundBrightness, minValue: 0, maxValue: 100, step: 10, disabled: false }) }),
+                            (0, i.jsx)('li', { className: B().item, children: (0, i.jsx)(settingBarWithDropdown, { title: 'Инвертировать цвета', onChange: (e) => { window.nativeSettings.set(getKey('invertColors'), e); setInvertColors(e); window.reloadFullscreenSettings?.(); }, value: invertColors, direction: 'bottom', options: [{ value: 'never', label: 'Никогда' }, { value: 'always', label: 'Всегда' }, { value: 'auto', label: 'Автоматически' }] }) }),
+                            (0, i.jsx)('li', { className: B().item, children: (0, i.jsxs)('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 0' }, children: [(0, i.jsx)(c.Caption, { type: 'controls', variant: 'div', size: 's', style: { opacity: 0.6, marginBottom: '8px' }, children: 'Вернуть все настройки полноэкранного плеера к стандартным значениям' }), (0, i.jsx)(g.Button, { color: 'secondary', radius: 'xxxl', size: 'm', onClick: resetToDefaults, children: 'Сбросить настройки' })] }) }),
+                        ]
+                    })]
+                });
+            });
 
             let overlaySettings = (0, n.PA)(({ modal: t }) => {
                 let { formatMessage: e } = (0, r.A)(),
@@ -1639,6 +1724,7 @@
                     [showWaitingAnimation, setShowWaitingAnimation] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.showWaitingAnimation') ?? true),
                     [reverseBlocks, setReverseBlocks] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.reverseBlocks') ?? false),
                     [invertLyricsScroll, setInvertLyricsScroll] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.invertLyricsScroll') ?? false),
+                    [overlayStyle, setOverlayStyle] = (0, d.useState)(window.nativeSettings.get('modFeatures.overlay.overlayStyle') ?? 'default'),
                     [activeTab, setActiveTab] = (0, d.useState)('main'),
                     onOverlayEnableToggle = (0, d.useCallback)(async (e) => {
                         console.log('modFeatures.overlay.enable toggled. Value: ', e);
@@ -1761,6 +1847,11 @@
                         window.nativeSettings.set('modFeatures.overlay.showWaitingAnimation', e);
                         setShowWaitingAnimation(e);
                     }, []),
+                    onOverlayStyleChange = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.overlay.overlayStyle changed. Value: ', e);
+                        window.nativeSettings.set('modFeatures.overlay.overlayStyle', e);
+                        setOverlayStyle(e);
+                    }, []),
                     onResetSettings = (0, d.useCallback)(async () => {
                         console.log('Resetting overlay settings to defaults');
                         const currentEnabled = window.nativeSettings.get('modFeatures.overlay.enable');
@@ -1809,6 +1900,8 @@
                         setShowWaitingAnimation(true);
                         window.nativeSettings.set('modFeatures.overlay.invertLyricsScroll', false);
                         setInvertLyricsScroll(false);
+                        window.nativeSettings.set('modFeatures.overlay.overlayStyle', 'default');
+                        setOverlayStyle('default');
                         
                         window.nativeSettings.set('modFeatures.overlay.enable', currentEnabled);
                         window.nativeSettings.set('modFeatures.overlay.position', currentPosition);
@@ -1841,7 +1934,28 @@
                         className: `${B().root} ${H().list}`,
                         style: { width: '32.125rem', 'max-height': '37.5rem', gap: 0 },
                         children: [
-
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Включить оверлей',
+                                    description: 'Отображает информацию о текущем треке поверх других окон',
+                                    onChange: onOverlayEnableToggle,
+                                    isChecked: isOverlayEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(settingBarWithDropdown, {
+                                    title: 'Стиль оверлея',
+                                    description: 'Выберите визуальный стиль оверлея',
+                                    onChange: onOverlayStyleChange,
+                                    value: overlayStyle,
+                                    disabled: !isOverlayEnabled,
+                                    options: [
+                                        { value: 'default', label: 'Стандартный', description: 'Классический стиль с размытием' },
+                                    ],
+                                }),
+                            }),
                             (0, i.jsx)('li', {
                                 className: B().item,
                                 children: (0, i.jsx)(P, {
@@ -2658,6 +2772,19 @@
                         window.nativeSettings.set('modFeatures.overlay.enable', e);
                         setIsOverlayEnabled(e);
                     }, []),
+                    [fullscreenModalOpened, setFullscreenModalOpened] = (0, d.useState)(false),
+                    fullscreenSettingsModal = {
+                        isOpened: fullscreenModalOpened,
+                        onOpenChange: setFullscreenModalOpened,
+                        open: () => setFullscreenModalOpened(true),
+                        close: () => setFullscreenModalOpened(false),
+                    },
+                    [fullscreenPlayerStyle, setFullscreenPlayerStyle] = (0, d.useState)(window.nativeSettings.get('modFeatures.fullscreenPlayerStyle') ?? 'default'),
+                    onFullscreenPlayerStyleChange = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.fullscreenPlayerStyle changed. Value: ', e);
+                        window.nativeSettings.set('modFeatures.fullscreenPlayerStyle', e);
+                        setFullscreenPlayerStyle(e);
+                    }, []),
                     b = (() => {
                         let e = (0, _.NFA)().get(_.twC),
                             t = (0, _._lF)(e.oldWebHost),
@@ -3032,21 +3159,37 @@
                             }),
                             (0, i.jsx)('li', {
                                 className: B().item,
-                                children: (0, i.jsx)(P, {
-                                    title: 'Включить оверлей',
-                                    description: 'Отображает информацию о текущем треке поверх других окон',
-                                    onChange: onOverlayEnableToggle,
-                                    isChecked: isOverlayEnabled,
+                                children: [
+                                    (0, i.jsx)(S, {
+                                        title: 'Полноэкранный плеер',
+                                        description: 'Настройки кастомного полноэкранного режима',
+                                        onClick: () => fullscreenPlayerStyle !== 'default' && setFullscreenModalOpened(true),
+                                        disabled: fullscreenPlayerStyle === 'default',
+                                    }),
+                                    (0, i.jsx)(fullscreenSettings, { modal: fullscreenSettingsModal, currentStyle: fullscreenPlayerStyle }),
+                                ],
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(settingBarWithDropdown, {
+                                    title: 'Стиль полноэкранного режима',
+                                    description: 'Замена стандартного полноэкранного плеера на кастомный',
+                                    onChange: onFullscreenPlayerStyleChange,
+                                    value: fullscreenPlayerStyle,
+                                    options: [
+                                        { value: 'default', label: 'Стандартный', description: 'Использовать стандартный плеер Яндекс Музыки' },
+                                        { value: 'enhanced', label: 'Современный', description: 'Использовать более совеременный плеер' },
+                                        { value: 'tv', label: 'TV плеер', description: 'Использовать TV плеер' },
+                                    ],
                                 }),
                             }),
                             (0, i.jsx)('li', {
                                 className: B().item,
                                 children: [
                                     (0, i.jsx)(S, {
-                                        title: 'Настройки оверлея',
-                                        description: 'Конфигурация отображаемой информации в оверлее',
+                                        title: 'Оверлей',
+                                        description: 'Настройки отображения информации трека поверх других окон',
                                         onClick: overlaySettingsModal.open,
-                                        disabled: !isOverlayEnabled,
                                     }),
                                     (0, i.jsx)(overlaySettings, { modal: overlaySettingsModal }),
                                 ],

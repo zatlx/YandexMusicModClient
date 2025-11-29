@@ -89,11 +89,15 @@ function updateOverlaySettings(settings) {
 function handlePlayerState(playerData) {
   const settings = getStore("modFeatures.overlay") || {};
 
-  if (!settings.enable || !playerData || !playerData.track) {
+  if (!playerData || !playerData.track) {
     return;
   }
 
   lastPlayerData = playerData;
+
+  if (!settings.enable) {
+    return;
+  }
 
   const track = playerData.track;
   const isNewTrack = !currentTrack || currentTrack.id !== track.id;
@@ -104,19 +108,12 @@ function handlePlayerState(playerData) {
 
     overlayWindow.sendToOverlay("update-track", {
       id: track.id,
-      title: track.title || "Неизвестный трек",
+      title: track.title,
       artists: track.artists || [],
       coverUri: track.coverUri || null,
     });
 
     if (settings.showLyrics !== false) {
-      overlayWindow.sendToOverlay("update-lyrics", {
-        lyrics: null,
-        hasLyrics: false,
-        loading: true,
-        message: "Загрузка текста..."
-      });
-
       fetchLyrics(track.id).then((lyrics) => {
         currentLyrics = lyrics;
 
@@ -124,7 +121,6 @@ function handlePlayerState(playerData) {
           overlayWindow.sendToOverlay("update-lyrics", {
             lyrics,
             hasLyrics: true,
-            loading: false
           });
 
           const currentProgress = lastPlayerData?.progress || 0;
@@ -140,16 +136,12 @@ function handlePlayerState(playerData) {
           overlayWindow.sendToOverlay("update-lyrics", {
             lyrics: null,
             hasLyrics: false,
-            loading: false,
-            message: "Текст песни недоступен"
           });
         }
-      }).catch(error => {
+      }).catch(() => {
         overlayWindow.sendToOverlay("update-lyrics", {
           lyrics: null,
           hasLyrics: false,
-          loading: false,
-          message: "Ошибка загрузки текста: " + error.message
         });
       });
     }
@@ -223,8 +215,61 @@ function cleanup() {
   overlayWindow.closeOverlayWindow();
 }
 
+function getCurrentState() {
+  return {
+    track: currentTrack,
+    lyrics: currentLyrics,
+    playerData: lastPlayerData,
+    hasLyrics: currentLyrics && currentLyrics.length > 0,
+  };
+}
+
+function restoreLastState() {
+  if (!lastPlayerData || !lastPlayerData.track) {
+    return;
+  }
+
+  const track = lastPlayerData.track;
+  currentTrack = track;
+  currentLyrics = null;
+
+  overlayWindow.sendToOverlay("update-track", {
+    id: track.id,
+    title: track.title,
+    artists: track.artists || [],
+    coverUri: track.coverUri || null,
+  });
+
+  const settings = getStore("modFeatures.overlay") || {};
+
+  if (settings.showLyrics !== false) {
+    fetchLyrics(track.id).then((lyrics) => {
+      currentLyrics = lyrics;
+
+      if (lyrics && lyrics.length > 0) {
+        overlayWindow.sendToOverlay("update-lyrics", {
+          lyrics,
+          hasLyrics: true,
+        });
+      } else {
+        overlayWindow.sendToOverlay("update-lyrics", {
+          lyrics: null,
+          hasLyrics: false,
+        });
+      }
+    }).catch(() => {
+      overlayWindow.sendToOverlay("update-lyrics", {
+        lyrics: null,
+        hasLyrics: false,
+      });
+    });
+  }
+}
+
 exports.initTracksApi = initTracksApi;
 exports.fetchLyrics = fetchLyrics;
 exports.updateOverlaySettings = updateOverlaySettings;
 exports.handlePlayerState = handlePlayerState;
 exports.cleanup = cleanup;
+exports.getCurrentState = getCurrentState;
+exports.restoreLastState = restoreLastState;

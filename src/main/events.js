@@ -52,6 +52,9 @@ const { throttle } = require("./lib/utils.js");
 const crypto = require("crypto");
 const overlayManager = require("./lib/overlay/overlayManager.js");
 const overlayWindow = require("./lib/overlay/overlayWindow.js");
+const playerApi = require("./lib/playerApi.js");
+const playerControl = require("./lib/playerControl.js");
+const fullscreen = require("./lib/fullscreen/fullscreen.js");
 
 const eventsLogger = new Logger_js_1.Logger("Events");
 const isBoolean = (value) => {
@@ -67,16 +70,22 @@ const fetchInitialPlayerState = async (window) => {
         const playerData = await window.webContents.executeJavaScript(`
             (() => {
                 try {
-                    const store = window.__NEXT_DATA__?.props?.pageProps?.serverState;
-                    if (store && store.sonataState && store.sonataState.playerState) {
-                        return {
-                            track: store.sonataState.playerState.playerState.entity.data,
-                            isPlaying: store.sonataState.playerState.playerState.status.paused === false,
-                            progress: store.sonataState.playerState.playerState.progress.position,
-                            duration: store.sonataState.playerState.playerState.progress.duration
-                        };
-                    }
-                    return null;
+                    const sonataState = window.sonataState;
+                    if (!sonataState) return null;
+                    
+                    const currentEntity = sonataState.queueState?.currentEntity?.observableValue?.value;
+                    const track = currentEntity?.entity?.data?.meta;
+                    const status = sonataState.playerState?.status?.observableValue?.value;
+                    const progress = sonataState.playerState?.progress?.observableValue?.value;
+                    
+                    if (!track) return null;
+                    
+                    return {
+                        track: track,
+                        isPlaying: status === 'playing',
+                        progress: progress?.position || 0,
+                        duration: progress?.duration || 0
+                    };
                 } catch (e) {
                     return null;
                 }
@@ -132,6 +141,11 @@ const handleApplicationEvents = (window) => {
     mainWindow = window;
     const updater = (0, updater_js_1.getUpdater)();
     const trackDownloader = new trackDownloader_js_1.TrackDownloader(window);
+
+    playerApi.initPlayerApi(window);
+    playerControl.initPlayerControl(window);
+
+    fullscreen.initFullscreen(window);
 
     updateGlobalShortcuts();
 
@@ -292,7 +306,6 @@ const handleApplicationEvents = (window) => {
             const overlaySettings = store_js_1.getModFeatures()?.overlay || {};
             if (overlaySettings.enable) {
                 overlayWindow.createOverlayWindow();
-                overlayManager.updateOverlaySettings(overlaySettings);
                 await fetchInitialPlayerState(window);
             }
 
@@ -431,6 +444,9 @@ const handleApplicationEvents = (window) => {
             data.canMoveBackward,
             data.canMoveForward,
         );
+        
+        playerApi.updateCachedState(data);
+        
         if (isBoolean(data.isPlaying)) {
             state_js_1.state.player.isPlaying = data.isPlaying;
             (0, appSuspension_js_1.toggleAppSuspension)(
@@ -521,9 +537,7 @@ const handleApplicationEvents = (window) => {
                 if (value) {
                     overlayWindow.createOverlayWindow();
                     overlayWindow.showOverlay();
-                    const settings = store_js_1.getModFeatures()?.overlay || {};
-                    overlayManager.updateOverlaySettings(settings);
-                    fetchInitialPlayerState(window);
+                    overlayManager.restoreLastState();
                 } else {
                     overlayWindow.closeOverlayWindow();
                 }
@@ -646,6 +660,227 @@ const handleApplicationEvents = (window) => {
         } catch (error) {
             return null;
         }
+    });
+
+    electron_1.ipcMain.handle("overlay-get-lyrics", async (event, trackId) => {
+        eventsLogger.info("Event handle", "overlay-get-lyrics", trackId);
+        try {
+            const lyrics = await overlayManager.fetchLyrics(trackId);
+            return lyrics;
+        } catch (error) {
+            eventsLogger.error("Error fetching lyrics:", error);
+            return null;
+        }
+    });
+
+    electron_1.ipcMain.handle("overlay-get-current-state", async () => {
+        eventsLogger.info("Event handle", "overlay-get-current-state");
+        try {
+            return overlayManager.getCurrentState();
+        } catch (error) {
+            eventsLogger.error("Error getting overlay state:", error);
+            return null;
+        }
+    });
+
+    // Player API handlers
+    electron_1.ipcMain.handle("player-api-get-full-state", async () => {
+        eventsLogger.info("Event handle", "player-api-get-full-state");
+        return await playerApi.getFullPlayerState();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-track", async () => {
+        eventsLogger.info("Event handle", "player-api-get-track");
+        return await playerApi.getCurrentTrack();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-playback", async () => {
+        eventsLogger.info("Event handle", "player-api-get-playback");
+        return await playerApi.getPlaybackState();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-settings", async () => {
+        eventsLogger.info("Event handle", "player-api-get-settings");
+        return await playerApi.getPlayerSettings();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-context", async () => {
+        eventsLogger.info("Event handle", "player-api-get-context");
+        return await playerApi.getCurrentContext();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-queue", async () => {
+        eventsLogger.info("Event handle", "player-api-get-queue");
+        return await playerApi.getQueueInfo();
+    });
+
+    electron_1.ipcMain.handle("player-api-is-liked", async (event, trackId) => {
+        eventsLogger.info("Event handle", "player-api-is-liked", trackId);
+        return await playerApi.isTrackLiked(trackId);
+    });
+
+    electron_1.ipcMain.handle("player-api-get-lyrics", async (event, trackId) => {
+        eventsLogger.info("Event handle", "player-api-get-lyrics", trackId);
+        return await playerApi.getTrackLyrics(trackId);
+    });
+
+    electron_1.ipcMain.handle("player-api-get-cached", async () => {
+        return playerApi.getCachedState();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-track-title", async () => {
+        return await playerApi.getTrackTitle();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-track-artists", async () => {
+        return await playerApi.getTrackArtists();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-track-album", async () => {
+        return await playerApi.getTrackAlbum();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-track-cover", async (event, size) => {
+        return await playerApi.getTrackCover(size);
+    });
+
+    electron_1.ipcMain.handle("player-api-get-track-duration", async () => {
+        return await playerApi.getTrackDuration();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-current-progress", async () => {
+        return await playerApi.getCurrentProgress();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-current-volume", async () => {
+        return await playerApi.getCurrentVolume();
+    });
+
+    electron_1.ipcMain.handle("player-api-is-shuffle-enabled", async () => {
+        return await playerApi.isShuffleEnabled();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-repeat-mode", async () => {
+        return await playerApi.getRepeatMode();
+    });
+
+    electron_1.ipcMain.handle("player-api-is-playing", async () => {
+        return await playerApi.isPlaying();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-current-playlist-name", async () => {
+        return await playerApi.getCurrentPlaylistName();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-album-year", async () => {
+        return await playerApi.getAlbumYear();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-album-release-date", async () => {
+        return await playerApi.getAlbumReleaseDate();
+    });
+
+    electron_1.ipcMain.handle("player-api-get-album-cover", async (event, size) => {
+        return await playerApi.getAlbumCover(size);
+    });
+
+    electron_1.ipcMain.handle("player-api-get-artist-cover", async (event, size, artistIndex) => {
+        return await playerApi.getArtistCover(size, artistIndex);
+    });
+
+    electron_1.ipcMain.handle("player-api-get-track-background-video", async () => {
+        return await playerApi.getTrackBackgroundVideo();
+    });
+
+    // Player Control handlers
+    electron_1.ipcMain.handle("player-control-toggle-play", async () => {
+        eventsLogger.info("Event handle", "player-control-toggle-play");
+        return await playerControl.togglePlay();
+    });
+
+    electron_1.ipcMain.handle("player-control-play", async () => {
+        eventsLogger.info("Event handle", "player-control-play");
+        return await playerControl.play();
+    });
+
+    electron_1.ipcMain.handle("player-control-pause", async () => {
+        eventsLogger.info("Event handle", "player-control-pause");
+        return await playerControl.pause();
+    });
+
+    electron_1.ipcMain.handle("player-control-next", async () => {
+        eventsLogger.info("Event handle", "player-control-next");
+        return await playerControl.next();
+    });
+
+    electron_1.ipcMain.handle("player-control-previous", async () => {
+        eventsLogger.info("Event handle", "player-control-previous");
+        return await playerControl.previous();
+    });
+
+    electron_1.ipcMain.handle("player-control-seek", async (event, position) => {
+        eventsLogger.info("Event handle", "player-control-seek", position);
+        return await playerControl.seek(position);
+    });
+
+    electron_1.ipcMain.handle("player-control-set-volume", async (event, volume) => {
+        eventsLogger.info("Event handle", "player-control-set-volume", volume);
+        return await playerControl.setVolume(volume);
+    });
+
+    electron_1.ipcMain.handle("player-control-toggle-shuffle", async () => {
+        eventsLogger.info("Event handle", "player-control-toggle-shuffle");
+        return await playerControl.toggleShuffle();
+    });
+
+    electron_1.ipcMain.handle("player-control-set-shuffle", async (event, enabled) => {
+        eventsLogger.info("Event handle", "player-control-set-shuffle", enabled);
+        return await playerControl.setShuffle(enabled);
+    });
+
+    electron_1.ipcMain.handle("player-control-toggle-repeat", async () => {
+        eventsLogger.info("Event handle", "player-control-toggle-repeat");
+        return await playerControl.toggleRepeat();
+    });
+
+    electron_1.ipcMain.handle("player-control-set-repeat", async (event, mode) => {
+        eventsLogger.info("Event handle", "player-control-set-repeat", mode);
+        return await playerControl.setRepeat(mode);
+    });
+
+    electron_1.ipcMain.handle("player-control-toggle-like", async () => {
+        eventsLogger.info("Event handle", "player-control-toggle-like");
+        return await playerControl.toggleLike();
+    });
+
+    electron_1.ipcMain.handle("player-control-like", async () => {
+        eventsLogger.info("Event handle", "player-control-like");
+        return await playerControl.likeTrack();
+    });
+
+    electron_1.ipcMain.handle("player-control-unlike", async () => {
+        eventsLogger.info("Event handle", "player-control-unlike");
+        return await playerControl.unlikeTrack();
+    });
+
+    electron_1.ipcMain.handle("player-control-dislike", async () => {
+        eventsLogger.info("Event handle", "player-control-dislike");
+        return await playerControl.dislikeTrack();
+    });
+
+    electron_1.ipcMain.handle("player-control-play-track", async (event, trackId, albumId) => {
+        eventsLogger.info("Event handle", "player-control-play-track", trackId, albumId);
+        return await playerControl.playTrack(trackId, albumId);
+    });
+
+    electron_1.ipcMain.handle("player-control-play-album", async (event, albumId) => {
+        eventsLogger.info("Event handle", "player-control-play-album", albumId);
+        return await playerControl.playAlbum(albumId);
+    });
+
+    electron_1.ipcMain.handle("player-control-play-playlist", async (event, uid, kind) => {
+        eventsLogger.info("Event handle", "player-control-play-playlist", uid, kind);
+        return await playerControl.playPlaylist(uid, kind);
     });
 };
 exports.handleApplicationEvents = handleApplicationEvents;

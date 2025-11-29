@@ -154,6 +154,14 @@
       border-bottom: none;
     }
 
+    .overlay-container.merged.has-lyrics.reversed .lyrics-block.no-rounded {
+      border-radius: 0;
+    }
+
+    .overlay-container.merged.has-lyrics.reversed .main-block.no-rounded {
+      border-radius: 0;
+    }
+
     .track-cover {
       width: calc(80px * var(--ui-scale));
       height: calc(80px * var(--ui-scale));
@@ -424,8 +432,8 @@
         <div class="cover-placeholder" id="coverPlaceholder">🎵</div>
       </div>
       <div class="track-info">
-        <div class="track-title" id="trackTitle">Оверлей готов</div>
-        <div class="track-artist" id="trackArtist">Ожидание трека...</div>
+        <div class="track-title" id="trackTitle"></div>
+        <div class="track-artist" id="trackArtist"></div>
       </div>
     </div>
 
@@ -475,6 +483,7 @@
       lyricsLineSpacing: 5,
       showWaitingAnimation: true,
       invertLyricsScroll: false,
+      overlayStyle: 'default',
     };
 
     let isDragging = false;
@@ -663,13 +672,8 @@
     function updateTrack(trackData) {
       if (!trackData) return;
 
-      trackTitle.textContent = trackData.title || 'Неизвестный трек';
-
-      if (trackData.artists && trackData.artists.length > 0) {
-        trackArtist.textContent = trackData.artists.map(a => a.name).join(', ');
-      } else {
-        trackArtist.textContent = 'Неизвестный исполнитель';
-      }
+      trackTitle.textContent = trackData.title;
+      trackArtist.textContent = trackData.artists.map(a => a.name).join(', ');
 
       if (trackData.coverUri) {
         const coverUrl = `https://${trackData.coverUri}`.replace('%%', '300x300');
@@ -692,10 +696,6 @@
     }
 
     function updateLyrics(lyricsData) {
-      if (lyricsData.loading) {
-        return;
-      }
-
       if (!lyricsData || !lyricsData.hasLyrics) {
         lyricsBlock.classList.remove('visible');
         overlayContainer.classList.remove('has-lyrics');

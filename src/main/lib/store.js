@@ -201,6 +201,7 @@ const init = () => {
       lyricsLineSpacing: 5,
       showWaitingAnimation: true,
       invertLyricsScroll: false,
+      overlayStyle: 'default',
     },
     globalShortcuts: {
       enable: true,
