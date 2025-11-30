@@ -19,6 +19,12 @@ function getControlsCode() {
       lyrics: null,
       lyricsVisible: false,
       progressUpdateInterval: null,
+      imageCache: new Map(),
+      MAX_CACHED_IMAGES: 10,
+      videoCache: new Map(),
+      MAX_CACHED_VIDEOS: 3,
+      hasPreloadedNext: false,
+      isTransitioning: false,
       
       init(container, settings) {
         this.container = container;
@@ -81,12 +87,14 @@ function getControlsCode() {
         
         const prevBtn = this.container.querySelector('#fsd-back');
         prevBtn.addEventListener('click', () => {
+          if (this.isTransitioning) return;
           this.fadeAnimation(prevBtn, 'fade-le');
           window.desktopEvents.send('fs-previous');
         });
         
         const nextBtn = this.container.querySelector('#fsd-next');
         nextBtn.addEventListener('click', () => {
+          if (this.isTransitioning) return;
           this.fadeAnimation(nextBtn, 'fade-ri');
           window.desktopEvents.send('fs-next');
         });
@@ -235,11 +243,15 @@ function getControlsCode() {
               break;
             case 'ArrowLeft':
               e.preventDefault();
+              e.stopPropagation();
+              if (this.isTransitioning) break;
               this.fadeAnimation(prevBtn, 'fade-le');
               window.desktopEvents.send('fs-previous');
               break;
             case 'ArrowRight':
               e.preventDefault();
+              e.stopPropagation();
+              if (this.isTransitioning) break;
               this.fadeAnimation(nextBtn, 'fade-ri');
               window.desktopEvents.send('fs-next');
               break;
@@ -461,7 +473,18 @@ function getControlsCode() {
             const isFirstLoad = !this.hasLoadedBackground;
             if (trackChanged || isFirstLoad) {
               this.hasLoadedBackground = true;
+              this.hasPreloadedNext = false;
+              this.isTransitioning = true;
+              
               await this.updateBackgroundForTrack(track);
+              
+              setTimeout(() => {
+                this.isTransitioning = false;
+              }, 500);
+              
+              setTimeout(() => {
+                this.prefetchNextTrack();
+              }, 1000);
             }
           }
           
@@ -638,6 +661,11 @@ function getControlsCode() {
             this.progressFill.style.width = percent + '%';
             this.currentTimeEl.textContent = this.formatTime(current);
             
+            if (percent >= 80 && !this.hasPreloadedNext && duration > 30) {
+              console.log('[Fullscreen] Track at 80%, prefetching next track');
+              this.prefetchNextTrack();
+            }
+            
             if (this.lyrics && this.lyricsVisible) {
               this.updateLyricsHighlight(current * 1000);
             }
@@ -765,12 +793,115 @@ function getControlsCode() {
           imageUrl = this.currentCoverUrl;
         }
         
+        this.loadAndCacheImage(imageUrl, (img) => {
+          this.drawBackground(img);
+        });
+      },
+      
+      loadAndCacheImage(url, onLoad) {
+        if (this.imageCache.has(url)) {
+          const cachedImg = this.imageCache.get(url);
+          if (onLoad) onLoad(cachedImg);
+          return;
+        }
+        
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => {
-          this.drawBackground(img);
+          if (this.imageCache.size >= this.MAX_CACHED_IMAGES) {
+            const firstKey = this.imageCache.keys().next().value;
+            this.imageCache.delete(firstKey);
+          }
+          this.imageCache.set(url, img);
+          
+          if (onLoad) onLoad(img);
         };
-        img.src = imageUrl;
+        img.src = url;
+      },
+      
+      prefetchVideo(videoUrl) {
+        if (!videoUrl || this.videoCache.has(videoUrl)) {
+          return;
+        }
+        
+        console.log('[Fullscreen] Prefetching video:', videoUrl);
+        
+        const video = document.createElement('video');
+        video.style.display = 'none';
+        video.preload = 'auto';
+        video.muted = true;
+        video.src = videoUrl;
+        
+        if (this.videoCache.size >= this.MAX_CACHED_VIDEOS) {
+          const firstKey = this.videoCache.keys().next().value;
+          const oldVideo = this.videoCache.get(firstKey);
+          if (oldVideo && oldVideo.parentNode) {
+            oldVideo.parentNode.removeChild(oldVideo);
+          }
+          oldVideo.src = '';
+          this.videoCache.delete(firstKey);
+        }
+        
+        this.videoCache.set(videoUrl, video);
+        this.container.appendChild(video);
+        
+        video.addEventListener('loadeddata', () => {
+          console.log('[Fullscreen] Video prefetched successfully:', videoUrl);
+        });
+        
+        video.addEventListener('error', (e) => {
+          console.error('[Fullscreen] Failed to prefetch video:', e);
+          this.videoCache.delete(videoUrl);
+          if (video.parentNode) {
+            video.parentNode.removeChild(video);
+          }
+        });
+      },
+      
+      async prefetchNextTrack() {
+        try {
+          if (this.hasPreloadedNext) {
+            return;
+          }
+          
+          const nextTrack = await window.desktopEvents.invoke('fs-get-next-track');
+          
+          if (!nextTrack) {
+            console.log('[Fullscreen] No next track to prefetch');
+            return;
+          }
+          
+          this.hasPreloadedNext = true;
+          console.log('[Fullscreen] Prefetching next track:', nextTrack.title);
+          
+          const backgroundChoice = this.settings?.backgroundChoice || 'album_art';
+          const useBackgroundVideo = this.settings?.useBackgroundVideo ?? true;
+          
+          if (backgroundChoice === 'static_color' || backgroundChoice === 'dynamic_color') {
+            console.log('[Fullscreen] Static/dynamic color background, skipping prefetch');
+            return;
+          }
+          
+          if (useBackgroundVideo && nextTrack.backgroundVideoUri) {
+            this.prefetchVideo(nextTrack.backgroundVideoUri);
+          }
+          
+          let imageUrl;
+          if (backgroundChoice === 'artist_art' && nextTrack.artistCoverUri) {
+            imageUrl = 'https://' + nextTrack.artistCoverUri.replace('%%', 'orig');
+          } else if (nextTrack.coverUri) {
+            imageUrl = 'https://' + nextTrack.coverUri.replace('%%', 'orig');
+          }
+          
+          if (imageUrl) {
+            this.loadAndCacheImage(imageUrl, () => {
+              console.log('[Fullscreen] Image prefetched for next track');
+            });
+          }
+          
+        } catch (error) {
+          console.error('[Fullscreen] Failed to prefetch next track:', error);
+        }
       },
       
       async updateBackground(imageUrl) {
@@ -794,12 +925,9 @@ function getControlsCode() {
           return;
         }
         
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
+        this.loadAndCacheImage(imageUrl, (img) => {
           this.drawBackground(img);
-        };
-        img.src = imageUrl;
+        });
         
         let resizeTimeout;
         window.addEventListener('resize', () => {
@@ -821,9 +949,8 @@ function getControlsCode() {
         const existingVideo = this.canvas.parentElement.querySelector('video.fs-background-video');
         
         this.canvas.style.display = 'block';
-        const fallbackImg = new Image();
-        fallbackImg.crossOrigin = 'anonymous';
-        fallbackImg.onload = () => {
+        
+        this.loadAndCacheImage(this.currentCoverUrl, (fallbackImg) => {
           const ctx = this.canvas.getContext('2d');
           const width = window.innerWidth;
           const height = window.innerHeight;
@@ -850,7 +977,7 @@ function getControlsCode() {
           if (this.previousBackgroundImg && existingVideo) {
             const prevImg = this.previousBackgroundImg;
             const prevParams = this.previousBackgroundParams || { x, y, sizeX, sizeY };
-            const transitionTime = 800;
+            const transitionTime = 500;
             let start;
             
             const animateFrame = (timestamp) => {
@@ -880,8 +1007,7 @@ function getControlsCode() {
           }
           
           this.isFallbackBackground = true;
-        };
-        fallbackImg.src = this.currentCoverUrl;
+        });
         
         const video = document.createElement('video');
         video.className = 'fs-background-video';
@@ -992,7 +1118,6 @@ function getControlsCode() {
         this.canvas.width = width;
         this.canvas.height = height;
         
-        // Enable high-quality image smoothing for better upscaling
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         
@@ -1024,7 +1149,7 @@ function getControlsCode() {
         
         const prevImg = this.previousBackgroundImg;
         const prevParams = this.previousBackgroundParams || { x, y, sizeX, sizeY };
-        const transitionTime = 800;
+        const transitionTime = 500;
         let start;
         let done = false;
         

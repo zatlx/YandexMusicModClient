@@ -85,8 +85,11 @@ function initFullscreenBridge(window) {
   
   ipcMain.handle('fs-get-artist-cover', async (event, size = '600x600') => {
     try {
-      const coverUrl = await playerApi.getArtistCover(size);
-      return coverUrl;
+      const state = await playerApi.getFullPlayerState();
+      if (state && state.track && state.track.artistCoverUri) {
+        return playerApi.getCoverUrl(state.track.artistCoverUri, size);
+      }
+      return null;
     } catch (error) {
       bridgeLogger.error("Failed to get artist cover:", error);
       return null;
@@ -95,25 +98,27 @@ function initFullscreenBridge(window) {
   
   ipcMain.handle('fs-get-background-video', async () => {
     try {
-      const videoUri = await playerApi.getTrackBackgroundVideo();
+      const state = await playerApi.getFullPlayerState();
+      const videoUri = state?.track?.backgroundVideoUri;
       
       if (videoUri) {
-        let fullUrl;
-        if (videoUri.startsWith('http://') || videoUri.startsWith('https://')) {
-          fullUrl = videoUri;
-        } else {
-          fullUrl = `https://${videoUri}`;
-        }
-        
-        fullUrl = fullUrl.replace('%%', '1080x1080');
-        
-        bridgeLogger.info("Background video URL:", fullUrl);
-        return fullUrl;
+        bridgeLogger.info("Background video URL:", videoUri);
+        return videoUri;
       }
       
       return null;
     } catch (error) {
       bridgeLogger.error("Failed to get background video:", error);
+      return null;
+    }
+  });
+  
+  ipcMain.handle('fs-get-next-track', async () => {
+    try {
+      const nextTrack = await playerApi.getNextTrack();
+      return nextTrack;
+    } catch (error) {
+      bridgeLogger.error("Failed to get next track:", error);
       return null;
     }
   });

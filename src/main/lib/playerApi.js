@@ -108,7 +108,9 @@ async function getFullPlayerState() {
               type: track.type,
               albumYear: track.albums?.[0]?.year,
               albumReleaseDate: track.albums?.[0]?.releaseDate,
-              albumCoverUri: track.albums?.[0]?.coverUri
+              albumCoverUri: track.albums?.[0]?.coverUri,
+              artistCoverUri: track.artists?.[0]?.cover?.uri,
+              backgroundVideoUri: track.backgroundVideoUri
             },
             
             playback: {
@@ -389,6 +391,56 @@ async function getTrackBackgroundVideo() {
   }
 }
 
+async function getNextTrack() {
+  if (!mainWindow) return null;
+  
+  try {
+    const nextTrackData = await mainWindow.webContents.executeJavaScript(`
+      (() => {
+        try {
+          const sonataState = window.sonataState;
+          const queueState = sonataState?.queueState;
+          
+          const currentIndex = queueState?.index?.observableValue?.value || 0;
+          const entityList = queueState?.entityList?.observableValue?.value;
+          
+          if (!entityList || !entityList.length) {
+            return null;
+          }
+          
+          const nextIndex = currentIndex + 1;
+          
+          if (nextIndex >= entityList.length) {
+            return null;
+          }
+          
+          const nextEntity = entityList[nextIndex];
+          const nextTrack = nextEntity?.entity?.data?.meta;
+          
+          if (!nextTrack) {
+            return null;
+          }
+          
+          return {
+            id: nextTrack.id,
+            title: nextTrack.title,
+            coverUri: nextTrack.coverUri,
+            artistCoverUri: nextTrack.artists?.[0]?.cover?.uri,
+            backgroundVideoUri: nextTrack.backgroundVideoUri
+          };
+        } catch (e) {
+          return null;
+        }
+      })()
+    `);
+    
+    return nextTrackData;
+  } catch (error) {
+    playerApiLogger.error("Failed to get next track:", error);
+    return null;
+  }
+}
+
 async function getTrackDuration() {
   const track = await getCurrentTrack();
   return track?.durationMs ? track.durationMs / 1000 : null;
@@ -483,3 +535,4 @@ exports.getAlbumReleaseDate = getAlbumReleaseDate;
 exports.getAlbumCover = getAlbumCover;
 exports.getArtistCover = getArtistCover;
 exports.getTrackBackgroundVideo = getTrackBackgroundVideo;
+exports.getNextTrack = getNextTrack;
