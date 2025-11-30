@@ -8,6 +8,7 @@ function getControlsCode() {
       coverImg: null,
       currentCoverUrl: null,
       previousBackgroundImg: null,
+      previousBackgroundParams: null,
       progressBar: null,
       progressFill: null,
       currentTimeEl: null,
@@ -848,6 +849,7 @@ function getControlsCode() {
           
           if (this.previousBackgroundImg && existingVideo) {
             const prevImg = this.previousBackgroundImg;
+            const prevParams = this.previousBackgroundParams || { x, y, sizeX, sizeY };
             const transitionTime = 800;
             let start;
             
@@ -857,7 +859,7 @@ function getControlsCode() {
               const factor = Math.min(elapsed / transitionTime, 1.0);
               
               ctx.globalAlpha = 1;
-              ctx.drawImage(prevImg, x, y, sizeX, sizeY);
+              ctx.drawImage(prevImg, prevParams.x, prevParams.y, prevParams.sizeX, prevParams.sizeY);
               
               ctx.globalAlpha = Math.sin((Math.PI / 2) * factor);
               ctx.drawImage(fallbackImg, x, y, sizeX, sizeY);
@@ -866,6 +868,7 @@ function getControlsCode() {
                 requestAnimationFrame(animateFrame);
               } else {
                 this.previousBackgroundImg = fallbackImg;
+                this.previousBackgroundParams = { x, y, sizeX, sizeY };
               }
             };
             
@@ -873,6 +876,7 @@ function getControlsCode() {
           } else {
             ctx.drawImage(fallbackImg, x, y, sizeX, sizeY);
             this.previousBackgroundImg = fallbackImg;
+            this.previousBackgroundParams = { x, y, sizeX, sizeY };
           }
           
           this.isFallbackBackground = true;
@@ -1014,10 +1018,12 @@ function getControlsCode() {
           ctx.globalAlpha = 1;
           ctx.drawImage(img, x, y, sizeX, sizeY);
           this.previousBackgroundImg = img;
+          this.previousBackgroundParams = { x, y, sizeX, sizeY };
           return;
         }
         
         const prevImg = this.previousBackgroundImg;
+        const prevParams = this.previousBackgroundParams || { x, y, sizeX, sizeY };
         const transitionTime = 800;
         let start;
         let done = false;
@@ -1028,7 +1034,7 @@ function getControlsCode() {
           const factor = Math.min(elapsed / transitionTime, 1.0);
           
           ctx.globalAlpha = 1;
-          ctx.drawImage(prevImg, x, y, sizeX, sizeY);
+          ctx.drawImage(prevImg, prevParams.x, prevParams.y, prevParams.sizeX, prevParams.sizeY);
           
           ctx.globalAlpha = Math.sin((Math.PI / 2) * factor);
           ctx.drawImage(img, x, y, sizeX, sizeY);
@@ -1036,6 +1042,7 @@ function getControlsCode() {
           if (factor === 1.0) {
             done = true;
             this.previousBackgroundImg = img;
+            this.previousBackgroundParams = { x, y, sizeX, sizeY };
           }
           
           if (!done) {
