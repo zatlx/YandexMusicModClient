@@ -38,14 +38,14 @@ function initPlayerControl(window) {
   playerControlLogger.info("Player Control initialized");
 }
 
-function sendAction(action) {
+function sendAction(action, value = undefined) {
   if (!mainWindow) {
     playerControlLogger.warn("Main window not initialized");
     return false;
   }
 
   try {
-    mainWindow.webContents.send(Events.PLAYER_ACTION, action, Date.now());
+    mainWindow.webContents.send(Events.PLAYER_ACTION, action, value, Date.now());
     playerControlLogger.info("Player action sent:", action);
     return true;
   } catch (error) {
