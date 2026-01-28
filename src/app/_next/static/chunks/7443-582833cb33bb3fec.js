@@ -12572,15 +12572,13 @@
                                                             (0, s.jsx)(g.hj, {
                                                                 title: 'Скачать трек в файл',
                                                                 description:
-                                                                    window?.DEVICE_INFO?.os === 'win32'
-                                                                        ? i?.id
-                                                                            ? 'Скачать трек в читаемый файл на вашем ПК'
-                                                                            : 'Не удалось получить данные о треке'
-                                                                        : 'Пока не доступно на вашей OS',
+                                                                    i?.id
+                                                                        ? 'Скачать трек в читаемый файл на вашем ПК'
+                                                                        : 'Не удалось получить данные о треке',
                                                                 children: (0, s.jsxs)('button', {
-                                                                    disabled: !i?.id || window?.DEVICE_INFO?.os !== 'win32',
+                                                                    disabled: !i?.id,
                                                                     className: `cpeagBA1_PblpJn8Xgtv UDMYhpDjiAFT3xUx268O ${
-                                                                        !i?.id || window?.DEVICE_INFO?.os !== 'win32' ? '' : 'HbaqudSqu7Q3mv3zMPGr'
+                                                                        !i?.id ? '' : 'HbaqudSqu7Q3mv3zMPGr'
                                                                     } qU2apWBO1yyEK0lZ3lPO`,
                                                                     style: {
                                                                         display: 'flex',

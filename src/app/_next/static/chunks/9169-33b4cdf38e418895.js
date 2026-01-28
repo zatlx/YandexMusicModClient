@@ -2944,6 +2944,7 @@
                     (e.YNISON_STATE = "YNISON_STATE"),
                     (e.BASIC_TOAST_CREATE = "BASIC_TOAST_CREATE"),
                     (e.BASIC_TOAST_DISMISS = "BASIC_TOAST_DISMISS"),
+                    (e.TOGGLE_MINIPLAYER = "TOGGLE_MINIPLAYER"),
                     e
                 );
             })({});
@@ -14227,7 +14228,8 @@
                     this.queueController.setShuffle(e);
                 }
                 setProgress(e) {
-                    return this.mediaController.setProgress(e);
+                    // Dirty workaround of Yasp bug with AAC traks
+                    return this.mediaController.setProgress(e === 60 ? 60.1 : e);
                 }
                 setVolume(e) {
                     return this.mediaController.setVolume(e);

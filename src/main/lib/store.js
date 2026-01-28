@@ -232,12 +232,28 @@ const init = () => {
       useCustomPathForSessionStorage: false,
       customPathForSessionStorage: "",
     },
+    miniplayer: {
+      skipTaskbar: false,
+      savePosition: false,
+      saveDimensions: false,
+      alwaysShowPlayerTimestamps: store.get(store_js_1.StoreKeys.MOD_FEATURES)?.playerBarEnhancement?.alwaysShowPlayerTimestamps ?? false,
+      window: {
+        alwaysOnTop: false,
+        width: 380,
+        height: 590,
+        x: 0,
+        y: 0,
+      }
+    },
+    r128Normalization: false,
     tryEnableSurroundAudio: false,
     showNonMusicPage: true,
     enableHardwareAcceleration: true,
   });
   initField(store_js_1.StoreKeys.IS_DEVTOOLS_ENABLED, false);
   initField(store_js_1.StoreKeys.ENABLE_YNISON_REMOTE_CONTROL, true);
+  initField(store_js_1.StoreKeys.SEND_ANONYMIZED_METRICS, true);
+  initField(store_js_1.StoreKeys.YNISON_INTERCEPT_PLAYBACK, false);
   initField(store_js_1.StoreKeys.DISPLAY_MAX_FPS, 60);
   initField(
     store_js_1.StoreKeys.DEFAULT_EXPERIMENT_OVERRIDES,
@@ -405,6 +421,11 @@ const getEnableYnisonRemoteControl = () => {
   return Boolean(getStore(store_js_1.StoreKeys.ENABLE_YNISON_REMOTE_CONTROL));
 };
 exports.getEnableYnisonRemoteControl = getEnableYnisonRemoteControl;
+
+const getYnisonInterceptPlayback = () => {
+  return Boolean(getStore(store_js_1.StoreKeys.YNISON_INTERCEPT_PLAYBACK));
+};
+exports.getYnisonInterceptPlayback = getYnisonInterceptPlayback;
 
 const getAutoUpdatesEnabled = () => {
   return Boolean(getStore(store_js_1.StoreKeys.ENABLE_AUTO_UPDATES));

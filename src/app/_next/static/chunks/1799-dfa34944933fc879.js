@@ -6218,7 +6218,7 @@
                     }
 
                     const meanSquare = sumSquares / bufferLength;
-                    const rawRMS = Math.sqrt(meanSquare);
+                    const rawRMS = Math.sqrt(meanSquare) * 2;
 
                     if (window.VIBE_ANIMATION_SMOOTH_DYNAMIC_ENERGY?.() ?? false) {
                         const alpha = window.VIBE_ANIMATION_SMOOTH_DYNAMIC_ENERGY_COEFFICENT?.() ?? 0.2;
@@ -6232,6 +6232,45 @@
 
                     return rawRMS;
                 }
+
+                getRMS2() {
+                    const { analyserNode } = this.currentGraph;
+
+                    // Частотные данные (ВАЖНО)
+                    const bufferLength = analyserNode.frequencyBinCount;
+                    const freqData = new Float32Array(bufferLength);
+                    analyserNode.getFloatFrequencyData(freqData); // в dB
+
+                    let sumSquares = 0;
+
+                    const stored = JSON.parse(window.localStorage.getItem(nVal.cYZ.YmPlayerVolume));
+                    const volume = this.getExponentialVolume(stored?.value ?? 1);
+
+                    for (let i = 0; i < bufferLength; i++) {
+                        const db = freqData[i];
+
+                        if (db === -Infinity) continue;
+
+                        const linear = ((volume !== 0) ? (Math.pow(10, db / 20) / volume) : 0);
+                        sumSquares += linear * linear;
+                    }
+
+                    const meanSquare = sumSquares / bufferLength;
+                    const rawEnergy = Math.sqrt(meanSquare) * 120;
+
+                    if (window.VIBE_ANIMATION_SMOOTH_DYNAMIC_ENERGY?.() ?? false) {
+                        const alpha = window.VIBE_ANIMATION_SMOOTH_DYNAMIC_ENERGY_COEFFICENT?.() ?? 0.2;
+                        this._prevRms =
+                            this._prevRms !== undefined
+                                ? this._prevRms * (1 - alpha) + rawEnergy * alpha
+                                : rawEnergy;
+
+                        return this._prevRms;
+                    }
+
+                    return rawEnergy;
+                }
+
                 constructor({ currentAudioElement: e, graphs: t }) {
                     (0, w._)(this, "currentGraph", null),
                         (0, w._)(this, "graphs", void 0),
@@ -6572,34 +6611,22 @@
             class eW {
                 connectNodes() {
                     let { useAnalyser: e, useGain: t } = this.config;
-                    t &&
-                        e &&
-                        (this.sourceNode.connect(this.gainNode),
-                        this.gainNode.connect(this.analyserNode),
-                        this.analyserNode.connect(this.context.destination)),
-                        t &&
-                            !e &&
-                            (this.sourceNode.connect(this.gainNode),
-                            this.gainNode.connect(this.context.destination)),
-                        !t &&
-                            e &&
-                            (this.sourceNode.connect(this.analyserNode),
-                            this.analyserNode.connect(
-                                this.context.destination,
-                            )),
-                        t ||
-                            e ||
-                            this.sourceNode.connect(this.context.destination);
+                    (this.sourceNode.connect(e ? this.analyserNode : this.r128GainNode),
+                        e && this.analyserNode.connect(this.r128GainNode),
+                        t && (this.r128GainNode.connect(this.gainNode), this.gainNode.connect(this.context.destination)),
+                        !t && this.r128GainNode.connect(this.context.destination));
                 }
                 connectEqualizer() {
                     let { useAnalyser: e, useGain: t } = this.config,
                         a = this.bands[this.bands.length - 1];
                     a &&
                         (this.sourceNode.disconnect(),
+                        this.r128GainNode.disconnect(),
                         this.sourceNode.connect(this.preamp),
-                        t && a.connect(this.gainNode),
-                        !t && e && a.connect(this.analyserNode),
-                        t || e || a.connect(this.context.destination));
+                        a.connect(e ? this.analyserNode : this.r128GainNode),
+                        e && this.analyserNode.connect(this.r128GainNode),
+                        t && (this.r128GainNode.connect(this.gainNode), this.gainNode.connect(this.context.destination)),
+                        !t && this.r128GainNode.connect(this.context.destination));
                 }
                 disconnectEqualizer() {
                     let { useAnalyser: e, useGain: t } = this.config,
@@ -6607,11 +6634,26 @@
                     a &&
                         (this.sourceNode.disconnect(),
                         a.disconnect(),
-                        t && this.sourceNode.connect(this.gainNode),
-                        !t && e && this.sourceNode.connect(this.analyserNode),
-                        t ||
-                            e ||
-                            this.sourceNode.connect(this.context.destination));
+                        this.r128GainNode.disconnect(),
+                        this.sourceNode.connect(e ? this.analyserNode : this.r128GainNode),
+                        e && this.analyserNode.connect(this.r128GainNode),
+                        t && (this.r128GainNode.connect(this.gainNode), this.gainNode.connect(this.context.destination)),
+                        !t && this.r128GainNode.connect(this.context.destination));
+                }
+                setR128Gain(e, t) {
+                    let a = -23,
+                        i = null == window || null == window.nativeSettings ? void 0 : window.nativeSettings.get('modFeatures.r128Normalization'),
+                        r = null != e ? e : this.lastR128,
+                        s = Number(null == r ? void 0 : r.i),
+                        l = 'boolean' == typeof t ? t : i;
+                    null != e && (this.lastR128 = e);
+                    if (!1 === l) return void this.r128GainNode.gain.setValueAtTime(1, this.context.currentTime);
+                    if (!Number.isFinite(s)) return void this.r128GainNode.gain.setValueAtTime(1, this.context.currentTime);
+                    let o = Number(null == r ? void 0 : r.tp),
+                        d = a - s;
+                    Number.isFinite(o) && (d = Math.min(d, -o));
+                    let u = Math.pow(10, d / 20);
+                    (Number.isFinite(u) && u > 0) || (u = 1), this.r128GainNode.gain.setValueAtTime(u, this.context.currentTime);
                 }
                 setBands(e) {
                     0 === this.bands.length
@@ -6706,33 +6748,30 @@
                         document.body.addEventListener("keydown", t, !0));
                 }
                 constructor(e, t) {
-                    (0, w._)(this, "audioElement", void 0),
-                        (0, w._)(this, "context", void 0),
-                        (0, w._)(this, "sourceNode", void 0),
-                        (0, w._)(this, "preamp", void 0),
-                        (0, w._)(this, "bands", []),
-                        (0, w._)(this, "analyserNode", void 0),
-                        (0, w._)(this, "bufferLength", 0),
-                        (0, w._)(this, "spectrum", new Uint8Array()),
-                        (0, w._)(this, "gainNode", void 0),
-                        (0, w._)(this, "config", void 0),
+                    ((0, w._)(this, 'audioElement', void 0),
+                        (0, w._)(this, 'context', void 0),
+                        (0, w._)(this, 'sourceNode', void 0),
+                        (0, w._)(this, 'preamp', void 0),
+                        (0, w._)(this, 'bands', []),
+                        (0, w._)(this, 'analyserNode', void 0),
+                        (0, w._)(this, 'bufferLength', 0),
+                        (0, w._)(this, 'spectrum', new Uint8Array()),
+                        (0, w._)(this, 'gainNode', void 0),
+                        (0, w._)(this, 'r128GainNode', void 0),
+                        (0, w._)(this, 'lastR128', null),
+                        (0, w._)(this, 'config', void 0),
                         (this.audioElement = e),
                         (this.context = new AudioContext()),
                         this.checkAndResumeAudioContext(this.context),
-                        (this.sourceNode =
-                            this.context.createMediaElementSource(
-                                this.audioElement,
-                            )),
-                        (this.analyserNode = this.createAnalyzerNode(
-                            this.context,
-                        )),
-                        (this.bufferLength =
-                            this.analyserNode.frequencyBinCount),
+                        (this.sourceNode = this.context.createMediaElementSource(this.audioElement)),
+                        (this.analyserNode = this.createAnalyzerNode(this.context)),
+                        (this.bufferLength = this.analyserNode.frequencyBinCount),
                         (this.spectrum = new Uint8Array(this.bufferLength)),
                         (this.gainNode = this.context.createGain()),
+                        (this.r128GainNode = this.context.createGain()),
                         (this.preamp = this.context.createGain()),
                         (this.config = t),
-                        this.connectNodes();
+                        this.connectNodes());
                 }
             }
             class ez {
@@ -6820,9 +6859,7 @@
                                         this.fade.disable();
                                 }
                         }),
-                        t.beforeMediaStartPlaying.tapPromise(
-                            "WebAudioPlugin",
-                            () => {
+                        t.beforeMediaStartPlaying.tapPromise('WebAudioPlugin', () => {
                                 var e, t, i;
                                 let r,
                                     s,
@@ -6846,13 +6883,18 @@
                                     (0, eK.b)(n) &&
                                         ((r = n.data.meta.fade),
                                         (s = n.data.meta.durationMs)),
+                                this.graphs.forEach((e) => {
+                                    var t;
+                                    let i = null == (t = a.state.mediaPlayersStore.value[F.e.AUDIO]) ? void 0 : t.currentAudioElement.value,
+                                        r = null == n ? void 0 : n.data.meta.r128;
+                                    (!i || e.audioElement === i) && e.setR128Gain(r);
+                                }),
                                     this.fade && this.fade.apply(r),
                                     this.smartPreview &&
                                         this.smartPreview.apply(s),
                                     Promise.resolve()
                                 );
-                            },
-                        );
+                        });
                 }
                 constructor(e) {
                     (0, w._)(this, "options", void 0),
@@ -10465,7 +10507,7 @@
 
                     e.state.playerState.event.onChange(() => {
                         if (
-                            (e.state.playerState.event.value === O.Iu.UPDATING_PROGRESS) && !e.state.currentMediaPlayer.value.isCrossing.value
+                            (e.state.playerState.event.value === O.Iu.UPDATING_PROGRESS) && !e.state.currentMediaPlayer?.value.isCrossing?.value
                         ) {
                             var t, a;
                             this.updateMetadata(
@@ -14641,13 +14683,22 @@
                                     if (e.isConnectionDisabled)
                                         return void a.connector.disconnect();
                                     let i = () => {
-                                            document.hidden ||
+                                            if (!document.hidden) {
                                                 a.connector.connect({
                                                     oauth: t.get(io.QGx).token,
                                                     multiAuthUserId: t
                                                         .get(io.WA$)
                                                         .getPassportUid(),
                                                 });
+                                            }
+                                        },
+                                        connect = () => {
+                                            a.connector.connect({
+                                                oauth: t.get(io.QGx).token,
+                                                multiAuthUserId: t
+                                                .get(io.WA$)
+                                                .getPassportUid(),
+                                            });
                                         },
                                         r = (e) => {
                                             a.isActive ||
@@ -14667,7 +14718,7 @@
                                             "visibilitychange",
                                             i,
                                         ),
-                                        i(),
+                                        connect(),
                                         () => {
                                             a.stateController.off(
                                                 A.p$.UPDATED,
@@ -14753,7 +14804,7 @@
                                         null == (t = a.status)
                                             ? void 0
                                             : t.paused) === !1;
-                                    !e.isActive && i && e.interceptActivity();
+                                    !e.isActive && i && (window?.YNISON_INTERCEPT_PLAYBACK ?? false) && e.interceptActivity();
                                 };
                             return (
                                 e.stateController.on(A.p$.UPDATED, t, "App"),
@@ -22288,10 +22339,13 @@
                     vibeAnimationEnhancementsSettingsModal: {},
                     playerBarEnhancementsSettingsModal: {},
                     windowBehaviorSettingsModal: {},
+                    miniplayerSettingsModal: {},
                     appUpdatesSettingsModal: {},
                     scrobblersSettingsModal: {},
                     downloaderSettingsModal: {},
                     systemSettingsModal: {},
+                    ynisonSettingsModal: {},
+                    audioSettingsModal: {},
                 },
                 landing: {
                     loadingState: u.GuX.IDLE,
@@ -23883,10 +23937,13 @@
                 vibeAnimationEnhancementsSettingsModal: S.qt,
                 playerBarEnhancementsSettingsModal: S.qt,
                 windowBehaviorSettingsModal: S.qt,
+                miniplayerSettingsModal: S.qt,
                 appUpdatesSettingsModal: S.qt,
                 scrobblersSettingsModal: S.qt,
                 downloaderSettingsModal: S.qt,
                 systemSettingsModal: S.qt,
+                ynisonSettingsModal: S.qt,
+                audioSettingsModal: S.qt,
             });
             var e6 = a(22307),
                 e8 = a(44748),

@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "YandexMusic",
-  "version": "5.79.7",
+  "version": "5.83.0",
   "description": "Персональные рекомендации, подборки на любой случай и музыкальные новинки",
   "author": "Яндекс Музыка <music@support.yandex.ru>",
   "homepage": "https://music.yandex.ru/download/",
@@ -15,22 +15,22 @@
   },
   "dependencies": {
     "@formatjs/icu-messageformat-parser": "~2.11.2",
-    "electron-log": "~5.3.3",
-    "electron-store": "~8.2.0",
-    "electron-updater": "~6.6.2",
-    "intl-messageformat": "~10.7.16",
-    "node-cron": "~3.0.3",
-    "semver": "~7.7.1",
-    "uuid": "~11.1.0",
     "@img/sharp-win32-x64": "^0.34.4",
     "axios": "^1.7.9",
     "discord-rpc": "^4.0.1",
     "electron-is-accelerator": "^0.2.0",
+    "electron-log": "~5.3.3",
+    "electron-store": "~8.2.0",
+    "electron-updater": "~6.6.2",
     "fast-uri": "^3.0.2",
-    "ffmpeg-static": "^5.2.0",
+    "intl-messageformat": "~10.7.16",
+    "node-cron": "~3.0.3",
     "node-id3": "^0.2.9",
     "original-fs": "^1.2.0",
-    "sharp": "^0.34.4"
+    "semver": "~7.7.1",
+    "sharp": "^0.34.4",
+    "tar": "^7.5.3",
+    "uuid": "~11.1.0"
   },
   "devDependencies": {
     "@electron/fuses": "~1.8.0",
@@ -73,7 +73,7 @@
     ]
   },
   "modification": {
-    "version": "1.42.0",
+    "version": "1.45.4",
     "realYMVersion": "5.75.2",
     "lastfm": {
       "apikey": "2b9046ddec8c00edcd0144b3abbea4ba",
@@ -82,7 +82,7 @@
     }
   },
   "buildInfo": {
-    "VERSION": "5.79.7",
+    "VERSION": "5.83.0",
     "BRANCH": "c3903938d4df76688c4639330c6834cd5ea664f2",
     "BUILD_TIME": "2025-11-13T15:37:20Z"
   },

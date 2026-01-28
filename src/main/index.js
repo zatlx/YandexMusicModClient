@@ -37,12 +37,24 @@ const path = require("path");
 const fs = require("fs");
 const store_js_1 = require("./lib/store.js");
 const taskBarExtension_js_1 = require("./lib/taskBarExtension/taskBarExtension.js");
-const modUpdater_js_1 = require("./lib/modUpdater.js");
+const modUpdater_js_1 = require('./lib/modUpdater.js');
+const miniPlayer_js_1 = require('./lib/miniplayer/miniplayer.js');
+const { getFfmpegUpdater } = require("./lib/ffmpegInstaller.js");
+const { initUserCountMetric } = require("./lib/metrics");
+const { throttle } = require('./lib/utils.js');
 
 Logger_js_1.Logger.setupLogger();
 const logger = new Logger_js_1.Logger("Main");
 
 logger.log('Application starting...');
+
+if (store_js_1.get('sendAnonymizedMetrics') ?? true) {
+    initUserCountMetric({
+        endpointUrl: 'https://ymmc-metrics.artem-matvienko0.workers.dev/metrics',
+        apiKey: 'tm3JDhHtl58Va8clKbuqdMEz_Gl9rQ5XRpsi0tV-H_4', // NOT A SECRET
+        modVersion: config_js_1.config.modification.version,
+    });
+}
 
 // Set the session storage (aka offline tracks, cache, etc) path to the custom path if requested
 function initSessionStoragePath() {
@@ -153,10 +165,15 @@ if (store_js_1.getModFeatures()?.tryEnableSurroundAudio ?? false) {
 }
 
 initSessionStoragePath();
+const MiniPlayer = miniPlayer_js_1.getMiniPlayer();
 
 (async () => {
   const updater = (0, updater_js_1.getUpdater)();
   const modUpdater = (0, modUpdater_js_1.getModUpdater)();
+  const ffmpegInstaller = getFfmpegUpdater({
+    repo: "TheKing-OfTime/YandexMusicModClient",
+    tagName: "ffmpeg-binaries",
+  });
   await electron_1.app.whenReady();
 
   logger.log('Electron.app is ready');
@@ -199,6 +216,11 @@ initSessionStoragePath();
   }
   modUpdater.onUpdateAvailable((currVersion, newVersion) => {
     (0, events_js_1.sendModUpdateAvailable)(window, currVersion, newVersion);
+    let callback = (progressRenderer, progressWindow) => {
+      events_js_1.sendProgressBarChange(window, 'modUpdateToast', progressRenderer * 100);
+      window.setProgressBar(progressWindow);
+    };
+    (0, modUpdater_js_1.getModUpdater)().onUpdateDownload(throttle(callback, 200));
   });
   if (
     store_js_1.getModFeatures()?.appAutoUpdates.enableModAutoUpdate &&

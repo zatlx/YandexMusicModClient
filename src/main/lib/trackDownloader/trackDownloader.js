@@ -10,7 +10,7 @@ const { TracksApiWrapper } = require("./tracksApiWrapper.js");
 const { FfmpegWrapper } = require("./ffmpegWrapper.js");
 const { createDirIfNotExist } = require("../utils.js");
 
-const TMP_PATH = path.join(electron.app.getAppPath(), "../../", "\\temp");
+const TMP_PATH = process.platform === "linux" ? path.join(electron.app.getPath('userData'), "temp") : path.join(electron.app.getAppPath(), "../../", "\\temp");
 const MAX_CONCURRENT_DOWNLOADS = 3;
 const API_REQUESTS_BATCH_LIMIT = 50;
 
@@ -219,7 +219,9 @@ class TrackDownloader {
             return;
         }
 
-        this.logger.log(`Downloading multiple tracks: ${trackIds}`);
+        this.logger.log(`Downloading multiple tracks: ${trackIds?.length}`);
+
+        callback(0, 0, 'Подготовка...');
 
         const batchSize = API_REQUESTS_BATCH_LIMIT;
         const tracksDownloadInfo = [];
