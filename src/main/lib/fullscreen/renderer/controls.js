@@ -402,8 +402,11 @@ function getControlsCode() {
           titleEl.style.cursor = 'pointer';
           titleEl.onclick = () => {
             if (track.id) {
-              window.desktopEvents.send('fs-navigate', \`/track/\${track.id}\`);
-              FullscreenManager.deactivate();
+              const album = track.albums?.[0];
+              if (album?.id) {
+                window.desktopEvents.send('fs-navigate', \`/album/track?albumId=\${album.id}&trackId=\${track.id}\`);
+                FullscreenManager.deactivate();
+              }
             }
           };
           
@@ -417,7 +420,7 @@ function getControlsCode() {
               link.onclick = () => {
                 const artistId = link.getAttribute('data-id');
                 if (artistId) {
-                  window.desktopEvents.send('fs-navigate', \`/artist/\${artistId}\`);
+                  window.desktopEvents.send('fs-navigate', \`/artist?artistId=\${artistId}\`);
                   FullscreenManager.deactivate();
                 }
               };
@@ -445,7 +448,7 @@ function getControlsCode() {
           if (album?.id) {
             albumEl.style.cursor = 'pointer';
             albumEl.onclick = () => {
-              window.desktopEvents.send('fs-navigate', \`/album/\${album.id}\`);
+              window.desktopEvents.send('fs-navigate', \`/album/track?albumId=\${album.id}&trackId=\${track.id}\`);
               FullscreenManager.deactivate();
             };
           }
@@ -576,30 +579,28 @@ function getControlsCode() {
             ctxName.style.display = '-webkit-box';
           }
           
-          if (context.id && contextName) {
-            ctxName.style.cursor = 'pointer';
-            ctxName.onclick = () => {
-              let path = '';
-              switch (context.type) {
-                case 'playlist':
-                  path = \`/users/\${context.uid || 'library'}/playlists/\${context.id}\`;
-                  break;
-                case 'album':
-                  path = \`/album/\${context.id}\`;
-                  break;
-                case 'artist':
-                  path = \`/artist/\${context.id}\`;
-                  break;
-              }
-              if (path) {
-                window.desktopEvents.send('fs-navigate', path);
-                FullscreenManager.deactivate();
-              }
-            };
-          } else {
-            ctxName.style.cursor = 'default';
-            ctxName.onclick = null;
-          }
+          ctxName.style.cursor = 'pointer';
+          ctxName.onclick = () => {
+            let path = '';
+            switch (context.type) {
+              case 'album':
+                const album = this.currentTrack?.albums?.[0];
+                if (album?.id && this.currentTrack?.id) {
+                  path = \`/album/track?albumId=\${album.id}&trackId=\${this.currentTrack.id}\`;
+                }
+                break;
+              case 'artist':
+                const artist = this.currentTrack?.artists?.[0];
+                if (artist?.id) {
+                  path = \`/artist?artistId=\${artist.id}\`;
+                }
+                break;
+            }
+            if (path) {
+              window.desktopEvents.send('fs-navigate', path);
+              FullscreenManager.deactivate();
+            }
+          };
           
         } catch (error) {
           console.error('[Fullscreen] Failed to update context:', error);

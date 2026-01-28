@@ -172,14 +172,13 @@ function initFullscreenBridge(window) {
   ipcMain.on('fs-navigate', (event, path) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.executeJavaScript(`
-        if (window.navigation && window.navigation.navigate) {
-          window.navigation.navigate('${path}');
-        } else if (window.history && window.history.pushState) {
-          window.history.pushState({}, '', '${path}');
-          window.dispatchEvent(new PopStateEvent('popstate'));
-        }
-      `).catch(err => {
-        bridgeLogger.error("Failed to navigate:", err);
+        (() => {
+          const existingLink = document.querySelector('a[href*="${path}"]');
+          if (existingLink) {
+            existingLink.click();
+          }
+        })();
+      `).catch(() => {
       });
     }
   });
