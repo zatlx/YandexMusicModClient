@@ -84,6 +84,8 @@ function getBaseStyles() {
       transition: all var(--transition-duration) var(--transition-function);
       color: var(--primary-color);
       line-height: 1.2;
+      z-index: 15;
+      position: relative;
     }
 
     #fsd-title span {
@@ -96,6 +98,8 @@ function getBaseStyles() {
       color: var(--secondary-color);
       transition: all var(--transition-duration) var(--transition-function);
       line-height: 1.3;
+      z-index: 15;
+      position: relative;
     }
 
     #fsd-artist span {
@@ -108,6 +112,8 @@ function getBaseStyles() {
       color: var(--tertiary-color);
       transition: all var(--transition-duration) var(--transition-function);
       line-height: 1.3;
+      z-index: 15;
+      position: relative;
     }
 
     #fsd-album span {
@@ -210,6 +216,7 @@ function getBaseStyles() {
       justify-content: center;
       min-width: 32px;
       min-height: 32px;
+      z-index: 15;
     }
 
     .fs-button:hover {
