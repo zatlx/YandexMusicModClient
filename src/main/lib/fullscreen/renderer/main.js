@@ -140,14 +140,16 @@ function getMainCode() {
         FullscreenControls.init(this.container, this.settings);
         
         this.setupMouseMoveHandlers();
-        
-        FullscreenControls.updateTrackInfo();
-        
-        if (showLyrics) {
-          setTimeout(() => {
-            FullscreenControls.toggleLyrics();
-          }, 500);
+
+        if (typeof LyricsModule !== 'undefined') {
+          LyricsModule.init();
+
+          if (showLyrics) {
+            LyricsModule.toggleVisibility();
+          }
         }
+
+        FullscreenControls.updateTrackInfo();
         
         setTimeout(() => {
           FullscreenControls.updateShuffleButton();
@@ -331,6 +333,10 @@ function getMainCode() {
         console.log('[Fullscreen] Deactivating...');
         
         FullscreenControls.cleanup();
+
+        if (typeof LyricsModule !== 'undefined') {
+          LyricsModule.cleanup();
+        }
         
         this.container.classList.remove('active');
         

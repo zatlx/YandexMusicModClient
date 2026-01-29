@@ -16,8 +16,7 @@ function getControlsCode() {
       playBtn: null,
       isPlaying: false,
       currentTrack: null,
-      lyrics: null,
-      lyricsVisible: false,
+      currentProgress: 0,
       progressUpdateInterval: null,
       imageCache: new Map(),
       MAX_CACHED_IMAGES: 10,
@@ -53,6 +52,7 @@ function getControlsCode() {
         this.isDraggingProgress = false;
         this.hasLoadedBackground = false;
         this.isFallbackBackground = false;
+        this.lyricsInitialized = false;
         
         this.eventHandlers = {
           keydown: null,
@@ -499,9 +499,10 @@ function getControlsCode() {
           this.updateShuffleButton();
           this.updateRepeatButton();
           this.updateLikeButton();
-          
-          if (trackChanged) {
+
+          if (trackChanged || !this.lyricsInitialized) {
             await this.loadLyrics(track.id);
+            this.lyricsInitialized = true;
           }
           
           await this.updateContext(state);
@@ -667,9 +668,7 @@ function getControlsCode() {
               this.prefetchNextTrack();
             }
             
-            if (this.lyrics && this.lyricsVisible) {
-              this.updateLyricsHighlight(current * 1000);
-            }
+            this.currentProgress = current;
             
             const isPlaying = state.playback.isPlaying;
             if (this.isPlaying !== isPlaying) {
@@ -683,10 +682,12 @@ function getControlsCode() {
       },
       
       startProgressUpdate() {
-        this.progressUpdateInterval = setInterval(() => {
+        const updateLoop = () => {
           this.updateProgress();
-        }, 500);
-        
+          this.progressUpdateInterval = requestAnimationFrame(updateLoop);
+        };
+        this.progressUpdateInterval = requestAnimationFrame(updateLoop);
+
         this.volumeUpdateInterval = setInterval(() => {
           this.updateVolume();
         }, 500);
@@ -705,7 +706,7 @@ function getControlsCode() {
       
       stopProgressUpdate() {
         if (this.progressUpdateInterval) {
-          clearInterval(this.progressUpdateInterval);
+          cancelAnimationFrame(this.progressUpdateInterval);
           this.progressUpdateInterval = null;
         }
         if (this.volumeUpdateInterval) {
@@ -1263,67 +1264,33 @@ function getControlsCode() {
       
       async loadLyrics(trackId) {
         try {
-          const lyrics = await window.desktopEvents.invoke('fs-get-track-lyrics', trackId);
-          this.lyrics = lyrics;
+          console.log('[Fullscreen] Loading lyrics for track:', trackId);
           
-          if (lyrics && this.lyricsVisible) {
-            this.renderLyrics();
+          if (typeof LyricsModule !== 'undefined') {
+            await LyricsModule.fetchAndApplyLyrics(trackId);
+          } else {
+            console.warn('[Fullscreen] LyricsModule not available');
           }
         } catch (error) {
           console.error('[Fullscreen] Failed to load lyrics:', error);
-          this.lyrics = null;
         }
       },
       
       toggleLyrics() {
-        this.lyricsVisible = !this.lyricsVisible;
-        const lyricsEl = this.container.querySelector('#ym-fs-lyrics');
-        const btn = this.container.querySelector('#ym-fs-lyrics-toggle');
-        
-        lyricsEl.classList.toggle('visible', this.lyricsVisible);
-        btn.classList.toggle('button-active', this.lyricsVisible);
-        this.container.classList.toggle('lyrics-visible', this.lyricsVisible);
-        
-        if (!this.lyrics) {
-          this.container.classList.add('lyrics-unavailable');
-        } else {
-          this.container.classList.remove('lyrics-unavailable');
-        }
-        
-        if (this.lyricsVisible && this.lyrics) {
-          this.renderLyrics();
-        }
-      },
-      
-      renderLyrics() {
-        const lyricsEl = this.container.querySelector('#ym-fs-lyrics');
-        if (!this.lyrics || !Array.isArray(this.lyrics)) return;
-        
-        lyricsEl.innerHTML = this.lyrics.map((line, i) => 
-          \`<div class="ym-fs-lyric-line" data-time="\${line.time}" data-index="\${i}">\${line.text}</div>\`
-        ).join('');
-      },
-      
-      updateLyricsHighlight(currentTimeMs) {
-        if (!this.lyrics) return;
-        
-        const lines = this.container.querySelectorAll('.ym-fs-lyric-line');
-        let activeIndex = -1;
-        
-        for (let i = 0; i < this.lyrics.length; i++) {
-          if (currentTimeMs >= this.lyrics[i].time) {
-            activeIndex = i;
-          } else {
-            break;
+        if (typeof LyricsModule !== 'undefined') {
+          const isVisible = LyricsModule.toggleVisibility();
+
+          const btn = this.container.querySelector('#fsd-lyrics');
+          if (btn) {
+            btn.classList.toggle('button-active', isVisible);
           }
-        }
-        
-        lines.forEach((line, i) => {
-          line.classList.toggle('active', i === activeIndex);
-        });
-        
-        if (activeIndex >= 0 && lines[activeIndex]) {
-          lines[activeIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+          this.container.classList.toggle('lyrics-visible', isVisible);
+          this.container.classList.toggle('lyrics-active', isVisible);
+          
+          console.log('[Fullscreen] Lyrics toggled:', isVisible);
+        } else {
+          console.warn('[Fullscreen] LyricsModule not available');
         }
       }
     };
