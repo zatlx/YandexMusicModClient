@@ -145,7 +145,10 @@ function getMainCode() {
           LyricsModule.init();
 
           if (showLyrics) {
-            LyricsModule.toggleVisibility();
+            const currentState = LyricsModule.getState();
+            if (!currentState.isVisible) {
+              LyricsModule.toggleVisibility();
+            }
           }
         }
 
