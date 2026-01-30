@@ -36,9 +36,13 @@ function getLyricsCode() {
       let lastUserScrollTime = 0;
       let lastScrolledLineIndex = -1;
 
+      let windowWasHidden = false;
+      let lastVisibilityChange = 0;
+
       const timeOffset = 0;
       const BlurMultiplier = 1.25;
       const USER_SCROLL_COOLDOWN = 750;
+      const WINDOW_FOCUS_RECOVERY_TIME = 25; // Время для восстановления после возврата фокуса
 
       function init() {
         if (isInitialized) {
@@ -125,6 +129,8 @@ function getLyricsCode() {
           lyricsContent.addEventListener('wheel', handleUserScroll);
           lyricsContent.addEventListener('touchmove', handleUserScroll);
         }
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
       }
       
       function handleUserScroll() {
@@ -137,6 +143,16 @@ function getLyricsCode() {
         lastUserScrollTime = performance.now();
 
         saveState();
+      }
+
+      function handleVisibilityChange() {
+        const now = performance.now();
+        
+        if (document.hidden) {
+          windowWasHidden = true;
+        } else if (windowWasHidden) {
+          lastVisibilityChange = now;
+        }
       }
 
       async function handleTrackChange() {
@@ -467,6 +483,7 @@ function getLyricsCode() {
         if (!lineElement) return;
         
         const timeSinceLastScroll = now - lastUserScrollTime;
+        const timeSinceVisibilityChange = now - lastVisibilityChange;
 
         const lineRect = lineElement.getBoundingClientRect();
         const containerRect = lyricsContent.getBoundingClientRect();
@@ -478,16 +495,24 @@ function getLyricsCode() {
         
         const isSameLine = lastScrolledLineIndex === activeLineIndex;
 
-        if (timeSinceLastScroll > USER_SCROLL_COOLDOWN && isLineInViewport) {
+        const shouldRecoverFromHidden = windowWasHidden && 
+                                       timeSinceVisibilityChange > WINDOW_FOCUS_RECOVERY_TIME && 
+                                       timeSinceVisibilityChange < WINDOW_FOCUS_RECOVERY_TIME + 5000;
+
+        if ((timeSinceLastScroll > USER_SCROLL_COOLDOWN && isLineInViewport) || shouldRecoverFromHidden) {
           isUserScrolling = false;
 
           if (lyricsContent) {
             lyricsContent.classList.remove('HideLineBlur');
           }
 
-          if (!isSameLine) {
+          if (!isSameLine || shouldRecoverFromHidden) {
             lastScrolledLineIndex = activeLineIndex;
             scrollToCenterView(lineElement);
+            
+            if (shouldRecoverFromHidden) {
+              windowWasHidden = false;
+            }
           }
         }
       }
@@ -586,12 +611,16 @@ function getLyricsCode() {
           lyricsContent.removeEventListener('touchmove', handleUserScroll);
         }
 
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+
         lastKnownProgress = 0;
         lastProgressUpdateTime = performance.now();
         lastActiveLineIndex = -1;
         isUserScrolling = false;
         lastUserScrollTime = 0;
         lastScrolledLineIndex = -1;
+        windowWasHidden = false;
+        lastVisibilityChange = 0;
         
         isInitialized = false;
         console.log('[Lyrics] Cleanup complete, state preserved');
