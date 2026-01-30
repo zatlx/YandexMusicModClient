@@ -17,6 +17,7 @@ function getLyricsCode() {
       let lastFrameTime = performance.now();
       let lastKnownProgress = 0;
       let lastProgressUpdateTime = performance.now();
+      let previousProgress = 0;
 
       let lyricsContainer = null;
       let lyricsContent = null;
@@ -366,6 +367,13 @@ function getLyricsCode() {
         if (!currentLyricsType || currentLyricsType === 'Static') return;
 
         const position = FullscreenControls.currentProgress || 0;
+
+        if (previousProgress > 10 && position < 5) {
+          console.log('[Lyrics] Track restarted, resetting state');
+          resetLyricsState();
+        }
+        previousProgress = position;
+        
         const processedPosition = position + timeOffset;
         
         const lines = LyricsObject.Types[currentLyricsType].Lines;
@@ -378,6 +386,28 @@ function getLyricsCode() {
           } else {
             line.Status = 'Active';
           }
+        });
+      }
+      
+      function resetLyricsState() {
+        lastActiveLineIndex = -1;
+        lastScrolledLineIndex = -1;
+        blurringLastLine = null;
+
+        if (lyricsContent) {
+          lyricsContent.scrollTop = 0;
+          lyricsContent.classList.remove('HideLineBlur');
+        }
+
+        const lines = LyricsObject.Types[currentLyricsType]?.Lines || [];
+        lines.forEach(line => {
+          if (line.HTMLElement) {
+            line.HTMLElement.classList.remove('NotSung', 'Active', 'Sung');
+            line.HTMLElement.classList.add('NotSung');
+            line.HTMLElement.style.setProperty('--gradient-position', '-20%');
+            line.HTMLElement.style.setProperty('--blur-amount', '0px');
+          }
+          line.Status = 'NotSung';
         });
       }
       
@@ -615,6 +645,7 @@ function getLyricsCode() {
 
         lastKnownProgress = 0;
         lastProgressUpdateTime = performance.now();
+        previousProgress = 0;
         lastActiveLineIndex = -1;
         isUserScrolling = false;
         lastUserScrollTime = 0;
