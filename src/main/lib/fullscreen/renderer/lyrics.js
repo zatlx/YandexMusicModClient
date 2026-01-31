@@ -586,6 +586,14 @@ function getLyricsCode() {
             <p>No lyrics available for this track</p>
           </div>
         \`;
+
+        const messageElement = lyricsContent.querySelector('.lyrics-message');
+        if (messageElement) {
+          setTimeout(() => {
+            messageElement.style.transition = 'opacity 0.5s ease-out';
+            messageElement.style.opacity = '0';
+          }, 1000);
+        }
       }
       
       function showErrorMessage() {
