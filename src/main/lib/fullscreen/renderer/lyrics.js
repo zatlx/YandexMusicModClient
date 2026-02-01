@@ -110,6 +110,26 @@ function getLyricsCode() {
         }
 
         console.log('[Lyrics] State restored, waiting for track data');
+
+        if (lyricsState.data && FullscreenControls.currentProgress) {
+          setTimeout(() => {
+            updateLyricsState();
+            
+            const lines = LyricsObject.Types[currentLyricsType]?.Lines || [];
+            let activeLineIndex = -1;
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].Status === 'Active') {
+                activeLineIndex = i;
+                break;
+              }
+            }
+            
+            if (activeLineIndex !== -1 && lines[activeLineIndex].HTMLElement) {
+              scrollToCenterViewInstant(lines[activeLineIndex].HTMLElement);
+              lastScrolledLineIndex = activeLineIndex;
+            }
+          }, 150);
+        }
       }
       
       function saveState() {
@@ -175,17 +195,27 @@ function getLyricsCode() {
           applyLyricsFromState();
 
           setTimeout(() => {
-            if (lyricsContent && lyricsState.scrollPosition > 0) {
-              lyricsContent.scrollTop = lyricsState.scrollPosition;
-            }
-
             if (FullscreenControls.currentProgress) {
               updateLyricsState();
               animateLyrics(0);
+
+              const lines = LyricsObject.Types[currentLyricsType]?.Lines || [];
+              let activeLineIndex = -1;
+              for (let i = 0; i < lines.length; i++) {
+                if (lines[i].Status === 'Active') {
+                  activeLineIndex = i;
+                  break;
+                }
+              }
+              
+              if (activeLineIndex !== -1 && lines[activeLineIndex].HTMLElement) {
+                scrollToCenterViewInstant(lines[activeLineIndex].HTMLElement);
+                lastScrolledLineIndex = activeLineIndex;
+              }
             }
             
             startAnimation();
-          }, 100);
+          }, 150);
           return;
         }
 
@@ -209,18 +239,27 @@ function getLyricsCode() {
             applyLyricsFromState();
 
             setTimeout(() => {
-              if (lyricsContent && lyricsState.scrollPosition > 0) {
-                console.log('[Lyrics] Restoring scroll position:', lyricsState.scrollPosition);
-                lyricsContent.scrollTop = lyricsState.scrollPosition;
-              }
-
               if (FullscreenControls.currentProgress) {
                 updateLyricsState();
                 animateLyrics(0);
+
+                const lines = LyricsObject.Types[currentLyricsType]?.Lines || [];
+                let activeLineIndex = -1;
+                for (let i = 0; i < lines.length; i++) {
+                  if (lines[i].Status === 'Active') {
+                    activeLineIndex = i;
+                    break;
+                  }
+                }
+                
+                if (activeLineIndex !== -1 && lines[activeLineIndex].HTMLElement) {
+                  scrollToCenterViewInstant(lines[activeLineIndex].HTMLElement);
+                  lastScrolledLineIndex = activeLineIndex;
+                }
               }
               
               startAnimation();
-            }, 100);
+            }, 150);
             return;
           }
           
@@ -326,6 +365,25 @@ function getLyricsCode() {
         console.log('[Lyrics] Container transform:', containerStyle.transform);
         console.log('[Lyrics] Container display:', containerStyle.display);
         console.log('[Lyrics] Line lyrics rendered');
+
+        setTimeout(() => {
+          if (FullscreenControls.currentProgress) {
+            updateLyricsState();
+            
+            let activeLineIndex = -1;
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].Status === 'Active') {
+                activeLineIndex = i;
+                break;
+              }
+            }
+            
+            if (activeLineIndex !== -1 && lines[activeLineIndex].HTMLElement) {
+              scrollToCenterViewInstant(lines[activeLineIndex].HTMLElement);
+              lastScrolledLineIndex = activeLineIndex;
+            }
+          }
+        }, 150);
       }
       
       function applyStaticLyrics(lines) {
@@ -560,6 +618,32 @@ function getLyricsCode() {
           top: targetScroll,
           behavior: 'smooth'
         });
+      }
+
+      function scrollToCenterViewInstant(lineElement) {
+        if (!lineElement || !lyricsContent) return;
+
+        const originalTransition = lyricsContent.style.transition;
+        const originalScrollBehavior = lyricsContent.style.scrollBehavior;
+        
+        lyricsContent.style.transition = 'none';
+        lyricsContent.style.scrollBehavior = 'auto';
+
+        const containerHeight = lyricsContent.clientHeight;
+        const lineOffsetTop = lineElement.offsetTop;
+        const lineHeight = lineElement.offsetHeight;
+        
+        const offset = -30;
+        const targetScrollTop = lineOffsetTop - (containerHeight / 2) + (lineHeight / 2) + offset;
+
+        lyricsContent.scrollTop = Math.max(0, targetScrollTop);
+
+        lyricsContent.offsetHeight; // force reflow
+
+        setTimeout(() => {
+          lyricsContent.style.transition = originalTransition;
+          lyricsContent.style.scrollBehavior = originalScrollBehavior;
+        }, 0);
       }
 
       function handleLyricsClick(e) {
