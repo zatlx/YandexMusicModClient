@@ -112,18 +112,6 @@ function getMainCode() {
         };
         
         document.addEventListener('click', interceptClick, true);
-        
-        document.addEventListener('keydown', (e) => {
-          if (e.key === 'f' && !e.ctrlKey && !e.altKey && !e.metaKey) {
-            if (document.activeElement.tagName !== 'INPUT' && 
-                document.activeElement.tagName !== 'TEXTAREA') {
-              if (this.mode && !this.isActive) {
-                e.preventDefault();
-                this.activate();
-              }
-            }
-          }
-        });
       },
       
       activate(showLyrics = false) {
