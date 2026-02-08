@@ -112,6 +112,36 @@ function getMainCode() {
         };
         
         document.addEventListener('click', interceptClick, true);
+        
+        let clickCount = 0;
+        let clickTimer = null;
+        
+        const handlePlayerBarDoubleClick = (e) => {
+          if (!this.mode || this.isActive) return;
+          
+          const playerBar = e.target.closest('[data-test-id="PLAYERBAR_DESKTOP"]');
+          if (!playerBar) return;
+          
+          const isClickable = e.target.closest('button, a, input, [role="button"], [role="slider"], [class*="CoverStack"], [class*="TrackInfo"]');
+          if (isClickable) return;
+          
+          clickCount++;
+          
+          if (clickCount === 1) {
+            clickTimer = setTimeout(() => clickCount = 0, 300);
+          } else if (clickCount === 2) {
+            clearTimeout(clickTimer);
+            clickCount = 0;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            this.activate();
+          }
+        };
+        
+        document.addEventListener('click', handlePlayerBarDoubleClick, true);
       },
       
       activate(showLyrics = false) {
