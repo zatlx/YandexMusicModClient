@@ -59,7 +59,8 @@ function getControlsCode() {
           mousemove: null,
           mouseup: null,
           documentMousemove: null,
-          documentMouseup: null
+          documentMouseup: null,
+          resize: null
         };
         
         this.coverImg = new Image();
@@ -398,6 +399,14 @@ function getControlsCode() {
           debouncedSetVolume(newVolume);
           this.hideVolumeBar(2000);
         });
+        
+        this.eventHandlers.resize = () => {
+          if (this.previousBackgroundImg && !this.canvas.parentElement.querySelector('video.fs-background-video')) {
+            this.drawBackground(this.previousBackgroundImg, false);
+          }
+        };
+        
+        window.addEventListener('resize', this.eventHandlers.resize);
       },
       
       hideVolumeBar(timeout = 2000) {
@@ -769,6 +778,10 @@ function getControlsCode() {
         if (this.eventHandlers.documentMouseup) {
           document.removeEventListener('mouseup', this.eventHandlers.documentMouseup);
           this.eventHandlers.documentMouseup = null;
+        }
+        if (this.eventHandlers.resize) {
+          window.removeEventListener('resize', this.eventHandlers.resize);
+          this.eventHandlers.resize = null;
         }
       },
       
