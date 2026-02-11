@@ -401,6 +401,10 @@ function getControlsCode() {
         });
         
         this.eventHandlers.resize = () => {
+          if (this.settings?.backgroundChoice === 'static_color' || this.settings?.backgroundChoice === 'dynamic_color') {
+            return;
+          }
+          
           if (this.previousBackgroundImg && !this.canvas.parentElement.querySelector('video.fs-background-video')) {
             this.drawBackground(this.previousBackgroundImg, false);
           }
