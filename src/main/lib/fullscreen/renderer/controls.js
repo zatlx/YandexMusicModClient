@@ -255,6 +255,31 @@ function getControlsCode() {
               this.fadeAnimation(nextBtn, 'fade-ri');
               window.desktopEvents.send('fs-next');
               break;
+            case 'ArrowUp':
+              e.preventDefault();
+              e.stopPropagation();
+              const currentVolumeUp = parseFloat(this.volumeFill.style.height) / 100 || 0;
+              const newVolumeUp = Math.min(1, currentVolumeUp + 0.05);
+              this.volumeFill.style.height = (newVolumeUp * 100) + '%';
+              this.volumeText.textContent = Math.round(newVolumeUp * 100) + '%';
+              this.updateVolumeIcon(newVolumeUp);
+              if (this.isMuted && newVolumeUp > 0) {
+                this.isMuted = false;
+              }
+              window.desktopEvents.send('fs-set-volume', newVolumeUp);
+              this.hideVolumeBar(2000);
+              break;
+            case 'ArrowDown':
+              e.preventDefault();
+              e.stopPropagation();
+              const currentVolumeDown = parseFloat(this.volumeFill.style.height) / 100 || 0;
+              const newVolumeDown = Math.max(0, currentVolumeDown - 0.05);
+              this.volumeFill.style.height = (newVolumeDown * 100) + '%';
+              this.volumeText.textContent = Math.round(newVolumeDown * 100) + '%';
+              this.updateVolumeIcon(newVolumeDown);
+              window.desktopEvents.send('fs-set-volume', newVolumeDown);
+              this.hideVolumeBar(2000);
+              break;
             case 'l':
             case 'L':
               this.toggleLyrics();
