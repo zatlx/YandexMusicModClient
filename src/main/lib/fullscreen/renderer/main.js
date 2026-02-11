@@ -173,6 +173,11 @@ function getMainCode() {
               LyricsModule.toggleVisibility();
             }
           }
+          
+          const lyricsState = LyricsModule.getState();
+          if (lyricsState.isVisible) {
+            this.container.classList.add('lyrics-visible', 'lyrics-active');
+          }
         }
 
         FullscreenControls.updateTrackInfo();
