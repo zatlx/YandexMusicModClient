@@ -122,6 +122,7 @@ function getEnhancedStyles() {
     .enhanced-mode #fsd-title svg {
       width: 35px;
       height: 35px;
+      vertical-align: 0;
     }
     
     .enhanced-mode.lyrics-active #fsd-title svg {
@@ -142,6 +143,7 @@ function getEnhancedStyles() {
       width: calc(var(--fsd-sec-size) - 6px);
       height: calc(var(--fsd-sec-size) - 6px);
       margin-right: 5px;
+      vertical-align: 0;
     }
 
     @media (max-width: 1400px) {

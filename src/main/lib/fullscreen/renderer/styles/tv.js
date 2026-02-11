@@ -68,7 +68,6 @@ function getTVStyles() {
     .tv-mode #fsd-artist svg,
     .tv-mode #fsd-album svg {
       flex: 0 0 auto;
-      align-self: flex-start;
     }
     
     .tv-mode #fsd-title {
