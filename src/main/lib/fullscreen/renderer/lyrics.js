@@ -596,10 +596,12 @@ function getLyricsCode() {
 
           if (!isSameLine || shouldRecoverFromHidden) {
             lastScrolledLineIndex = activeLineIndex;
-            scrollToCenterView(lineElement);
             
             if (shouldRecoverFromHidden) {
+              scrollToCenterViewInstant(lineElement);
               windowWasHidden = false;
+            } else {
+              scrollToCenterView(lineElement);
             }
           }
         }
