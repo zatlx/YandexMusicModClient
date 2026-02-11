@@ -177,6 +177,10 @@ const MiniPlayer = miniPlayer_js_1.getMiniPlayer();
   await electron_1.app.whenReady();
 
   logger.log('Electron.app is ready');
+  
+  if (deviceInfo_js_1.devicePlatform === platform_js_1.Platform.WINDOWS) {
+    electron_1.app.setAppUserModelId(config_js_1.config.meta.APP_ID);
+  }
 
   const window = await (0, createWindow_js_1.createWindow)();
   (0, systemMenu_js_1.setupSystemMenu)(window);
