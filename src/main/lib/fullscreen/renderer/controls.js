@@ -687,10 +687,6 @@ function getControlsCode() {
           this.progressUpdateInterval = requestAnimationFrame(updateLoop);
         };
         this.progressUpdateInterval = requestAnimationFrame(updateLoop);
-
-        this.volumeUpdateInterval = setInterval(() => {
-          this.updateVolume();
-        }, 500);
         
         window.desktopEvents?.on('track-changed', () => {
           this.updateTrackInfo();
@@ -708,10 +704,6 @@ function getControlsCode() {
         if (this.progressUpdateInterval) {
           cancelAnimationFrame(this.progressUpdateInterval);
           this.progressUpdateInterval = null;
-        }
-        if (this.volumeUpdateInterval) {
-          clearInterval(this.volumeUpdateInterval);
-          this.volumeUpdateInterval = null;
         }
         if (this.volumeTimer) {
           clearTimeout(this.volumeTimer);
