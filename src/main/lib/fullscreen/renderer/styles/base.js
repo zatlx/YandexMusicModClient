@@ -677,7 +677,6 @@ function getBaseStyles() {
       position: relative;
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
       justify-content: flex-end;
       margin: 8px 0;
     }
@@ -702,7 +701,7 @@ function getBaseStyles() {
 
     #fsd-volume-bar.dragging #volume-thumb {
       display: block;
-      transform: scale(1.1);
+      transform: translateX(-50%) scale(1.1);
     }
 
     #fsd-volume-bar-inner {
@@ -724,8 +723,9 @@ function getBaseStyles() {
       height: 13px;
       border-radius: 50%;
       background: var(--primary-color);
-      position: relative;
-      left: -2px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
       top: -5px;
       display: none;
       pointer-events: none;
