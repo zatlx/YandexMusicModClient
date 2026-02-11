@@ -354,6 +354,25 @@ function getControlsCode() {
             window.desktopEvents.send('fs-toggle-mute');
           }
         });
+        
+        this.volumeContainer.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          
+          const currentVolume = parseFloat(this.volumeFill.style.height) / 100 || 0;
+          const delta = e.deltaY > 0 ? -0.05 : 0.05;
+          const newVolume = Math.max(0, Math.min(1, currentVolume + delta));
+          
+          this.volumeFill.style.height = (newVolume * 100) + '%';
+          this.volumeText.textContent = Math.round(newVolume * 100) + '%';
+          this.updateVolumeIcon(newVolume);
+          
+          if (this.isMuted && newVolume > 0) {
+            this.isMuted = false;
+          }
+          
+          debouncedSetVolume(newVolume);
+          this.hideVolumeBar(2000);
+        });
       },
       
       hideVolumeBar(timeout = 2000) {
