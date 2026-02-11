@@ -137,6 +137,11 @@ function getMainCode() {
             e.stopPropagation();
             e.stopImmediatePropagation();
             
+            const trackModalCloseButton = document.querySelector('[data-test-id="TRACK_PAGE_CLOSE_BUTTON"]');
+            if (trackModalCloseButton) {
+              trackModalCloseButton.click();
+            }
+            
             this.activate();
           }
         };
