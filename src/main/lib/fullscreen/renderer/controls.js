@@ -745,16 +745,20 @@ function getControlsCode() {
         };
         this.progressUpdateInterval = requestAnimationFrame(updateLoop);
         
-        window.desktopEvents?.on('track-changed', () => {
-          this.updateTrackInfo();
-        });
-        
-        window.desktopEvents?.on('playback-state-changed', (state) => {
-          if (this.isPlaying !== state.isPlaying) {
-            this.isPlaying = state.isPlaying;
-            this.updatePlayButton(false);
-          }
-        });
+        if (!window.__fullscreenControlsEventsInitialized) {
+          window.desktopEvents?.on('track-changed', () => {
+            this.updateTrackInfo();
+          });
+          
+          window.desktopEvents?.on('playback-state-changed', (state) => {
+            if (this.isPlaying !== state.isPlaying) {
+              this.isPlaying = state.isPlaying;
+              this.updatePlayButton(false);
+            }
+          });
+          
+          window.__fullscreenControlsEventsInitialized = true;
+        }
       },
       
       stopProgressUpdate() {
