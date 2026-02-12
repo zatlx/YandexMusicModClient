@@ -2,7 +2,10 @@
 
 function getLyricsCode() {
   return `
-    const LyricsModule = (() => {
+    if (typeof LyricsModule === 'undefined') {
+      window.__lyricsModuleInitialized = false;
+      
+      window.LyricsModule = (() => {
       let lyricsState = {
         data: null,
         currentTrackId: null,
@@ -12,7 +15,6 @@ function getLyricsCode() {
         lastActiveLineIndex: -1
       };
 
-      let isInitialized = false;
       let animationFrameId = null;
       let lastFrameTime = performance.now();
       let lastKnownProgress = 0;
@@ -46,13 +48,6 @@ function getLyricsCode() {
       const WINDOW_FOCUS_RECOVERY_TIME = 25; // Время для восстановления после возврата фокуса
 
       function init() {
-        if (isInitialized) {
-          console.log('[Lyrics] Already initialized, restoring state');
-          console.log('[Lyrics] Current state:', lyricsState);
-          restoreState();
-          return;
-        }
-        
         console.log('[Lyrics] Initializing lyrics module...');
         console.log('[Lyrics] Initial state:', lyricsState);
         
@@ -62,10 +57,13 @@ function getLyricsCode() {
           return;
         }
         
-        setupEventListeners();
+        if (!window.__lyricsModuleInitialized) {
+          setupEventListeners();
+          window.__lyricsModuleInitialized = true;
+        }
+        
         restoreState();
         
-        isInitialized = true;
         console.log('[Lyrics] Lyrics module initialized');
       }
       
@@ -747,7 +745,6 @@ function getLyricsCode() {
         windowWasHidden = false;
         lastVisibilityChange = 0;
         
-        isInitialized = false;
         console.log('[Lyrics] Cleanup complete, state preserved');
       }
 
@@ -780,9 +777,6 @@ function getLyricsCode() {
         getState
       };
     })();
-
-    if (typeof FullscreenControls !== 'undefined') {
-      LyricsModule.init();
     }
   `;
 }
