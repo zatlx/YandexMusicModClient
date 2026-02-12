@@ -918,6 +918,7 @@ function getControlsCode() {
           if (this.hasPreloadedNext) {
             return;
           }
+          this.hasPreloadedNext = true;
           
           const nextTrack = await window.desktopEvents.invoke('fs-get-next-track');
           
@@ -926,7 +927,6 @@ function getControlsCode() {
             return;
           }
           
-          this.hasPreloadedNext = true;
           console.log('[Fullscreen] Prefetching next track:', nextTrack.title);
           
           const backgroundChoice = this.settings?.backgroundChoice || 'album_art';
