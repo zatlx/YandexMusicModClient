@@ -769,6 +769,34 @@ function getLyricsCode() {
           if (btn) {
             btn.classList.toggle('button-active', lyricsState.isVisible);
           }
+
+          if (lyricsState.isVisible) {
+            if (LyricsObject && currentLyricsType) {
+              const lines = LyricsObject.Types[currentLyricsType]?.Lines;
+              if (lines) {
+                let activeLineIndex = -1;
+                for (let i = 0; i < lines.length; i++) {
+                  if (lines[i].Status === 'Active') {
+                    activeLineIndex = i;
+                    break;
+                  }
+                }
+                
+                if (activeLineIndex !== -1 && lines[activeLineIndex].HTMLElement) {
+                  const handleTransitionEnd = (e) => {
+                    if (e.propertyName === 'transform') {
+                      lyricsContainer.parentElement.removeEventListener('transitionend', handleTransitionEnd);
+                      scrollToCenterView(lines[activeLineIndex].HTMLElement);
+                      lastScrolledLineIndex = activeLineIndex;
+                    }
+                  };
+                  lyricsContainer.parentElement.addEventListener('transitionend', handleTransitionEnd);
+                }
+              }
+            } else if (FullscreenControls?.currentTrack?.id) {
+              fetchAndApplyLyrics(FullscreenControls.currentTrack.id);
+            }
+          }
         }
         
         console.log('[Lyrics] Visibility toggled:', lyricsState.isVisible);
