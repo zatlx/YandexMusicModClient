@@ -582,22 +582,33 @@ function getLyricsCode() {
         const isSameLine = lastScrolledLineIndex === activeLineIndex;
 
         const shouldRecoverFromHidden = windowWasHidden && 
-                                       timeSinceVisibilityChange > WINDOW_FOCUS_RECOVERY_TIME && 
-                                       timeSinceVisibilityChange < WINDOW_FOCUS_RECOVERY_TIME + 5000;
+                                       timeSinceVisibilityChange >= WINDOW_FOCUS_RECOVERY_TIME && 
+                                       timeSinceVisibilityChange < 5000;
 
-        if ((timeSinceLastScroll > USER_SCROLL_COOLDOWN && isLineInViewport) || shouldRecoverFromHidden) {
+        if (shouldRecoverFromHidden) {
+          isUserScrolling = false;
+          if (lyricsContent) {
+            lyricsContent.classList.remove('HideLineBlur');
+          }
+          
+          lastScrolledLineIndex = activeLineIndex;
+          scrollToCenterViewInstant(lineElement);
+          windowWasHidden = false;
+          return;
+        }
+
+        if (timeSinceLastScroll > USER_SCROLL_COOLDOWN) {
           isUserScrolling = false;
 
           if (lyricsContent) {
             lyricsContent.classList.remove('HideLineBlur');
           }
 
-          if (!isSameLine || shouldRecoverFromHidden) {
+          if (!isSameLine) {
             lastScrolledLineIndex = activeLineIndex;
-            
-            if (shouldRecoverFromHidden) {
+
+            if (!isLineInViewport) {
               scrollToCenterViewInstant(lineElement);
-              windowWasHidden = false;
             } else {
               scrollToCenterView(lineElement);
             }
