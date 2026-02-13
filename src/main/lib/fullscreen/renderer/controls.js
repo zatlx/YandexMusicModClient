@@ -230,11 +230,11 @@ function getControlsCode() {
         this.eventHandlers.keydown = (e) => {
           if (!this.container.classList.contains('active')) return;
           
-          switch(e.key) {
+          switch(e.code) {
             case 'Escape':
               FullscreenManager.deactivate();
               break;
-            case ' ':
+            case 'Space':
               e.preventDefault();
               e.stopPropagation();
               this.fadeAnimation(this.playBtn);
@@ -281,8 +281,9 @@ function getControlsCode() {
               window.desktopEvents.send('fs-set-volume', newVolumeDown);
               this.hideVolumeBar(2000);
               break;
-            case 'l':
-            case 'L':
+            case 'KeyL':
+              e.preventDefault();
+              e.stopPropagation();
               this.toggleLyrics();
               break;
           }
