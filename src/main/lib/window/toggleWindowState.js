@@ -8,20 +8,8 @@ const taskBarExtension_js_1 = require("../taskBarExtension/taskBarExtension.js")
 const toggleWindowVisibility_js_1 = require("./toggleWindowVisibility.js");
 const toggleWindowState = (window) => {
 
-    if (window && !window.isDestroyed()) {
-        if (typeof window.isClosable === 'function' && !window.isClosable()) {
-            const allWindows = electron_1.BrowserWindow.getAllWindows();
-            const mainWindow = allWindows.find(win => 
-                !win.isDestroyed() && 
-                typeof win.isClosable === 'function' &&
-                win.isClosable()
-            );
-            if (mainWindow) {
-                window = mainWindow;
-            } else {
-                return;
-            }
-        }
+    if (!window || window.isDestroyed()) {
+        return;
     }
     
     if (state_js_1.state.isWindowHidden) {
