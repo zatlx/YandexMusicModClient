@@ -134,6 +134,7 @@ const init = () => {
       showSmallIcon: false,
       showAlbum: true,
       showVersion: true,
+      showModVersion: true,
       overrideDeepLinksExperiment: false,
       showGitHubButton: true,
       afkTimeout: 15,

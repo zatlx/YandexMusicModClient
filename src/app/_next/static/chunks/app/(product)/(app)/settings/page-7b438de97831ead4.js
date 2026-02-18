@@ -804,6 +804,7 @@
                     [isExperimentOverriden, setIsExperimentOverriden] = (0, d.useState)(window.nativeSettings.get('modFeatures.discordRPC.overrideDeepLinksExperiment')),
                     [showButtons, setShowButtons] = (0, d.useState)(window.nativeSettings.get('modFeatures.discordRPC.showButtons')),
                     [isDiscordStatusEnabled, setIsDiscordStatusEnabled] = (0, d.useState)(window.nativeSettings.get('modFeatures.discordRPC.enable')),
+                    [showModVersion, setShowModVersion] = (0, d.useState)(window.nativeSettings.get('modFeatures.discordRPC.showModVersion') ?? true),
                     onAfkTimeoutChange = (0, d.useCallback)(async (e) => {
                         let value = Math.min(Math.max(e, 1), 30);
                         setAfkTimeout(value);
@@ -852,6 +853,11 @@
                     onDiscordShowVersionToggle = (0, d.useCallback)(async (e) => {
                         console.log('modFeatures.discordRPC.showVersion toggled. Value: ', e);
                         window.nativeSettings.set('modFeatures.discordRPC.showVersion', e);
+                    }, []),
+                    onDiscordShowModVersionToggle = (0, d.useCallback)(async (e) => {
+                        console.log('modFeatures.discordRPC.showModVersion toggled. Value: ', e);
+                        window.nativeSettings.set('modFeatures.discordRPC.showModVersion', e);
+                        setShowModVersion(e);
                     }, []),
                     onStatusDisplayTypeChange = (0, d.useCallback)(async (e) => {
                         console.log('statusDisplayType changed. Value: ', e);
@@ -954,6 +960,16 @@
                                     description: 'Отображать ли версию трека в статусе',
                                     onChange: onDiscordShowVersionToggle,
                                     isChecked: window.nativeSettings.get('modFeatures.discordRPC.showVersion'),
+                                    disabled: !isDiscordStatusEnabled,
+                                }),
+                            }),
+                            (0, i.jsx)('li', {
+                                className: B().item,
+                                children: (0, i.jsx)(P, {
+                                    title: 'Отображать Версию клиента',
+                                    description: 'Отображать ли "YandexMusicModClient X.XX.X" для синглов',
+                                    onChange: onDiscordShowModVersionToggle,
+                                    isChecked: showModVersion,
                                     disabled: !isDiscordStatusEnabled,
                                 }),
                             }),
