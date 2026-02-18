@@ -13,3 +13,5 @@
 /src/main/native_modules/
 /dataminer/output/
 /.vscode
+/miniplayer/.build-meta.json
+/src/main/lib/miniplayer/renderer/
