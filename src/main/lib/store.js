@@ -213,7 +213,7 @@ const init = () => {
       TOGGLE_SHUFFLE: "Ctrl+'",
     },
     appAutoUpdates: {
-      enableAppAutoUpdate: store.get(store_js_1.StoreKeys.ENABLE_AUTO_UPDATES) ?? true,
+      enableAppAutoUpdate: store.get(store_js_1.StoreKeys.ENABLE_AUTO_UPDATES) ?? false,
       enableAppAutoUpdateByProbability: false,
       enableModAutoUpdate: true,
     },
