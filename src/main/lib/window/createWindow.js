@@ -77,6 +77,9 @@ const createWindow = async () => {
             preload: node_path_1.default.join(__dirname, '..', 'preload.js')
         }
     });
+
+    window.isMainWindow = true;
+    
     window.once('ready-to-show', () => {
         window.setSize(dimensions?.width ?? 1280, dimensions?.height ?? 800);
         if (dimensions?.maximized ?? false) window.maximize();

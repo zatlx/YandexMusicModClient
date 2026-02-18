@@ -7,10 +7,16 @@ const handleDeeplink_js_1 = require("./handlers/handleDeeplink.js");
 const Logger_js_1 = require("../packages/logger/Logger.js");
 const singleInstanceLogger = new Logger_js_1.Logger("SingleInstance");
 const isFirstInstance = electron_1.app.requestSingleInstanceLock();
+
+const getMainWindow = () => {
+  const windows = electron_1.BrowserWindow.getAllWindows();
+  return windows.find(w => w.isMainWindow);
+};
+
 const checkForSingleInstance = () => {
   if (isFirstInstance) {
     electron_1.app.on("second-instance", (event, commandLine) => {
-      const [window] = electron_1.BrowserWindow.getAllWindows();
+      const window = getMainWindow();
       if (window) {
         if (window.isMinimized()) {
           window.restore();
