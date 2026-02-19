@@ -4,11 +4,8 @@ function getControlsCode() {
   return `
     const FullscreenControls = {
       container: null,
-      canvas: null,
+      backgroundRenderer: null,
       coverImg: null,
-      currentCoverUrl: null,
-      previousBackgroundImg: null,
-      previousBackgroundParams: null,
       progressBar: null,
       progressFill: null,
       currentTimeEl: null,
@@ -18,17 +15,22 @@ function getControlsCode() {
       currentTrack: null,
       currentProgress: 0,
       progressUpdateInterval: null,
-      imageCache: new Map(),
-      MAX_CACHED_IMAGES: 10,
-      videoCache: new Map(),
-      MAX_CACHED_VIDEOS: 3,
-      hasPreloadedNext: false,
-      isTransitioning: false,
       
       init(container, settings) {
         this.container = container;
         this.settings = settings || {};
-        this.canvas = container.querySelector('#fsd-background');
+
+        this.backgroundRenderer = BackgroundRenderer.create(
+          container,
+          settings,
+          {
+            getDynamicColor: () => window.desktopEvents.invoke('fs-get-dynamic-color'),
+            getArtistCover: (size) => window.desktopEvents.invoke('fs-get-artist-cover', size),
+            getBackgroundVideo: () => window.desktopEvents.invoke('fs-get-background-video')
+          }
+        );
+        this.backgroundRenderer.init();
+        
         this.coverArtEl = container.querySelector('#fsd-art-image');
         this.progressBar = container.querySelector('#fsd-progress-bar');
         this.progressFill = container.querySelector('#fsd-progress-bar-inner');
@@ -50,8 +52,6 @@ function getControlsCode() {
         this.isMuted = false;
         this.volumeBeforeMute = 1.0;
         this.isDraggingProgress = false;
-        this.hasLoadedBackground = false;
-        this.isFallbackBackground = false;
         this.lyricsInitialized = false;
         
         this.eventHandlers = {
@@ -88,14 +88,14 @@ function getControlsCode() {
         
         const prevBtn = this.container.querySelector('#fsd-back');
         prevBtn.addEventListener('click', () => {
-          if (this.isTransitioning) return;
+          if (this.backgroundRenderer.getIsTransitioning()) return;
           this.fadeAnimation(prevBtn, 'fade-le');
           window.desktopEvents.send('fs-previous');
         });
         
         const nextBtn = this.container.querySelector('#fsd-next');
         nextBtn.addEventListener('click', () => {
-          if (this.isTransitioning) return;
+          if (this.backgroundRenderer.getIsTransitioning()) return;
           this.fadeAnimation(nextBtn, 'fade-ri');
           window.desktopEvents.send('fs-next');
         });
@@ -245,14 +245,14 @@ function getControlsCode() {
             case 'ArrowLeft':
               e.preventDefault();
               e.stopPropagation();
-              if (this.isTransitioning) break;
+              if (this.backgroundRenderer.getIsTransitioning()) break;
               this.fadeAnimation(prevBtn, 'fade-le');
               window.desktopEvents.send('fs-previous');
               break;
             case 'ArrowRight':
               e.preventDefault();
               e.stopPropagation();
-              if (this.isTransitioning) break;
+              if (this.backgroundRenderer.getIsTransitioning()) break;
               this.fadeAnimation(nextBtn, 'fade-ri');
               window.desktopEvents.send('fs-next');
               break;
@@ -400,18 +400,6 @@ function getControlsCode() {
           debouncedSetVolume(newVolume);
           this.hideVolumeBar(2000);
         });
-        
-        this.eventHandlers.resize = () => {
-          if (this.settings?.backgroundChoice === 'static_color' || this.settings?.backgroundChoice === 'dynamic_color') {
-            return;
-          }
-          
-          if (this.previousBackgroundImg && !this.canvas.parentElement.querySelector('video.fs-background-video')) {
-            this.drawBackground(this.previousBackgroundImg, false);
-          }
-        };
-        
-        window.addEventListener('resize', this.eventHandlers.resize);
       },
       
       hideVolumeBar(timeout = 2000) {
@@ -529,22 +517,18 @@ function getControlsCode() {
             }
             
             this.coverImg.src = coverUrl;
-            this.currentCoverUrl = coverUrl;
             
-            const isFirstLoad = !this.hasLoadedBackground;
+            const isFirstLoad = !this.backgroundRenderer.previousBackgroundImg;
             if (trackChanged || isFirstLoad) {
-              this.hasLoadedBackground = true;
-              this.hasPreloadedNext = false;
-              this.isTransitioning = true;
+              this.backgroundRenderer.hasPreloadedNext = false;
               
-              await this.updateBackgroundForTrack(track);
+              await this.backgroundRenderer.updateBackgroundForTrack(track);
               
-              setTimeout(() => {
-                this.isTransitioning = false;
-              }, 500);
-              
-              setTimeout(() => {
-                this.prefetchNextTrack();
+              setTimeout(async () => {
+                const nextTrack = await window.desktopEvents.invoke('fs-get-next-track');
+                if (nextTrack) {
+                  this.backgroundRenderer.prefetchNextTrack(nextTrack);
+                }
               }, 1000);
             }
           }
@@ -721,9 +705,13 @@ function getControlsCode() {
             this.progressFill.style.width = percent + '%';
             this.currentTimeEl.textContent = this.formatTime(current);
             
-            if (percent >= 80 && !this.hasPreloadedNext && duration > 30) {
+            if (percent >= 80 && !this.backgroundRenderer.hasPreloadedNext && duration > 30) {
               console.log('[Fullscreen] Track at 80%, prefetching next track');
-              this.prefetchNextTrack();
+              window.desktopEvents.invoke('fs-get-next-track').then(nextTrack => {
+                if (nextTrack) {
+                  this.backgroundRenderer.prefetchNextTrack(nextTrack);
+                }
+              });
             }
             
             this.currentProgress = current;
@@ -775,6 +763,10 @@ function getControlsCode() {
       
       cleanup() {
         this.stopProgressUpdate();
+
+        if (this.backgroundRenderer) {
+          this.backgroundRenderer.cleanup();
+        }
         
         if (this.eventHandlers.keydown) {
           document.removeEventListener('keydown', this.eventHandlers.keydown);
@@ -788,454 +780,12 @@ function getControlsCode() {
           document.removeEventListener('mouseup', this.eventHandlers.documentMouseup);
           this.eventHandlers.documentMouseup = null;
         }
-        if (this.eventHandlers.resize) {
-          window.removeEventListener('resize', this.eventHandlers.resize);
-          this.eventHandlers.resize = null;
-        }
       },
       
       formatTime(seconds) {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return mins + ':' + (secs < 10 ? '0' : '') + secs;
-      },
-      
-      async updateBackgroundForTrack(track) {
-        const backgroundChoice = this.settings?.backgroundChoice || 'album_art';
-        const useBackgroundVideo = this.settings?.useBackgroundVideo ?? true;
-        
-        console.log('[Fullscreen] Updating background:', { backgroundChoice, useBackgroundVideo });
-        
-        if (backgroundChoice === 'dynamic_color') {
-          try {
-            const color = await window.desktopEvents.invoke('fs-get-dynamic-color');
-            if (color) {
-              this.drawSolidBackground(color);
-              return;
-            }
-          } catch (error) {
-            console.error('[Fullscreen] Failed to get dynamic color:', error);
-          }
-        }
-        
-        if (backgroundChoice === 'static_color') {
-          const staticColor = this.settings?.staticBackColor || '#000000';
-          this.drawSolidBackground(staticColor);
-          return;
-        }
-        
-        if (useBackgroundVideo && (backgroundChoice === 'album_art' || backgroundChoice === 'artist_art')) {
-          try {
-            console.log('[Fullscreen] Trying to get background video...');
-            const videoUri = await window.desktopEvents.invoke('fs-get-background-video');
-            console.log('[Fullscreen] Got video URI:', videoUri);
-            if (videoUri) {
-              this.drawVideoBackground(videoUri);
-              return;
-            } else {
-              console.log('[Fullscreen] No video URI available, falling back to image');
-            }
-          } catch (error) {
-            console.error('[Fullscreen] Failed to get background video:', error);
-          }
-        }
-        
-        let imageUrl;
-        if (backgroundChoice === 'artist_art') {
-          try {
-            const artistCover = await window.desktopEvents.invoke('fs-get-artist-cover', 'orig');
-            imageUrl = artistCover || this.currentCoverUrl;
-          } catch (error) {
-            console.error('[Fullscreen] Failed to get artist cover:', error);
-            imageUrl = this.currentCoverUrl;
-          }
-        } else {
-          imageUrl = this.currentCoverUrl;
-        }
-        
-        this.loadAndCacheImage(imageUrl, (img) => {
-          this.drawBackground(img);
-        });
-      },
-      
-      loadAndCacheImage(url, onLoad) {
-        if (this.imageCache.has(url)) {
-          const cachedImg = this.imageCache.get(url);
-          if (onLoad) onLoad(cachedImg);
-          return;
-        }
-        
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          if (this.imageCache.size >= this.MAX_CACHED_IMAGES) {
-            const firstKey = this.imageCache.keys().next().value;
-            this.imageCache.delete(firstKey);
-          }
-          this.imageCache.set(url, img);
-          
-          if (onLoad) onLoad(img);
-        };
-        img.src = url;
-      },
-      
-      prefetchVideo(videoUrl) {
-        if (!videoUrl || this.videoCache.has(videoUrl)) {
-          return;
-        }
-        
-        console.log('[Fullscreen] Prefetching video:', videoUrl);
-        
-        const video = document.createElement('video');
-        video.style.display = 'none';
-        video.preload = 'auto';
-        video.muted = true;
-        video.src = videoUrl;
-        
-        if (this.videoCache.size >= this.MAX_CACHED_VIDEOS) {
-          const firstKey = this.videoCache.keys().next().value;
-          const oldVideo = this.videoCache.get(firstKey);
-          if (oldVideo && oldVideo.parentNode) {
-            oldVideo.parentNode.removeChild(oldVideo);
-          }
-          oldVideo.src = '';
-          this.videoCache.delete(firstKey);
-        }
-        
-        this.videoCache.set(videoUrl, video);
-        this.container.appendChild(video);
-        
-        video.addEventListener('loadeddata', () => {
-          console.log('[Fullscreen] Video prefetched successfully:', videoUrl);
-        });
-        
-        video.addEventListener('error', (e) => {
-          console.error('[Fullscreen] Failed to prefetch video:', e);
-          this.videoCache.delete(videoUrl);
-          if (video.parentNode) {
-            video.parentNode.removeChild(video);
-          }
-        });
-      },
-      
-      async prefetchNextTrack() {
-        try {
-          if (this.hasPreloadedNext) {
-            return;
-          }
-          this.hasPreloadedNext = true;
-          
-          const nextTrack = await window.desktopEvents.invoke('fs-get-next-track');
-          
-          if (!nextTrack) {
-            console.log('[Fullscreen] No next track to prefetch');
-            return;
-          }
-          
-          console.log('[Fullscreen] Prefetching next track:', nextTrack.title);
-          
-          const backgroundChoice = this.settings?.backgroundChoice || 'album_art';
-          const useBackgroundVideo = this.settings?.useBackgroundVideo ?? true;
-          
-          if (backgroundChoice === 'static_color' || backgroundChoice === 'dynamic_color') {
-            console.log('[Fullscreen] Static/dynamic color background, skipping prefetch');
-            return;
-          }
-          
-          if (useBackgroundVideo && nextTrack.backgroundVideoUri) {
-            this.prefetchVideo(nextTrack.backgroundVideoUri);
-          }
-          
-          let imageUrl;
-          if (backgroundChoice === 'artist_art' && nextTrack.artistCoverUri) {
-            imageUrl = 'https://' + nextTrack.artistCoverUri.replace('%%', 'orig');
-          } else if (nextTrack.coverUri) {
-            imageUrl = 'https://' + nextTrack.coverUri.replace('%%', 'orig');
-          }
-          
-          if (imageUrl) {
-            this.loadAndCacheImage(imageUrl, () => {
-              console.log('[Fullscreen] Image prefetched for next track');
-            });
-          }
-          
-        } catch (error) {
-          console.error('[Fullscreen] Failed to prefetch next track:', error);
-        }
-      },
-      
-      async updateBackground(imageUrl) {
-        const backgroundChoice = this.settings?.backgroundChoice || 'album_art';
-        
-        if (backgroundChoice === 'dynamic_color') {
-          try {
-            const color = await window.desktopEvents.invoke('fs-get-dynamic-color');
-            if (color) {
-              this.drawSolidBackground(color);
-              return;
-            }
-          } catch (error) {
-            console.error('[Fullscreen] Failed to get dynamic color:', error);
-          }
-        }
-        
-        if (backgroundChoice === 'static_color') {
-          const staticColor = this.settings?.staticBackColor || '#000000';
-          this.drawSolidBackground(staticColor);
-          return;
-        }
-        
-        this.loadAndCacheImage(imageUrl, (img) => {
-          this.drawBackground(img);
-        });
-        
-        let resizeTimeout;
-        window.addEventListener('resize', () => {
-          if (resizeTimeout) clearTimeout(resizeTimeout);
-          resizeTimeout = setTimeout(() => {
-            const bgChoice = this.settings?.backgroundChoice || 'album_art';
-            if (bgChoice === 'dynamic_color' || bgChoice === 'static_color') {
-              this.updateBackground(imageUrl);
-            } else if (img.complete) {
-              this.drawBackground(img, false);
-            }
-          }, 100);
-        });
-      },
-      
-      drawVideoBackground(videoUri) {
-        console.log('[Fullscreen] Drawing video background:', videoUri);
-        
-        const existingVideo = this.canvas.parentElement.querySelector('video.fs-background-video');
-        
-        this.canvas.style.display = 'block';
-        
-        this.loadAndCacheImage(this.currentCoverUrl, (fallbackImg) => {
-          const ctx = this.canvas.getContext('2d');
-          const width = window.innerWidth;
-          const height = window.innerHeight;
-          this.canvas.width = width;
-          this.canvas.height = height;
-          
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          
-          const computedStyle = getComputedStyle(this.container);
-          const blurStr = computedStyle.getPropertyValue('--background-blur').trim();
-          const brightnessStr = computedStyle.getPropertyValue('--background-brightness').trim();
-          const blur = blurStr ? parseInt(blurStr) : 40;
-          const brightness = brightnessStr ? parseInt(brightnessStr) : 60;
-          
-          ctx.filter = \`brightness(\${brightness / 100}) blur(\${blur}px)\`;
-          
-          const scale = Math.max(width / fallbackImg.width, height / fallbackImg.height);
-          const x = (width - fallbackImg.width * scale) / 2 - blur * 2;
-          const y = (height - fallbackImg.height * scale) / 2 - blur * 2;
-          const sizeX = fallbackImg.width * scale + blur * 4;
-          const sizeY = fallbackImg.height * scale + blur * 4;
-          
-          if (this.previousBackgroundImg && existingVideo) {
-            const prevImg = this.previousBackgroundImg;
-            const prevParams = this.previousBackgroundParams || { x, y, sizeX, sizeY };
-            const transitionTime = 500;
-            let start;
-            
-            const animateFrame = (timestamp) => {
-              if (!start) start = timestamp;
-              const elapsed = timestamp - start;
-              const factor = Math.min(elapsed / transitionTime, 1.0);
-              
-              ctx.globalAlpha = 1;
-              ctx.drawImage(prevImg, prevParams.x, prevParams.y, prevParams.sizeX, prevParams.sizeY);
-              
-              ctx.globalAlpha = Math.sin((Math.PI / 2) * factor);
-              ctx.drawImage(fallbackImg, x, y, sizeX, sizeY);
-              
-              if (factor < 1.0) {
-                requestAnimationFrame(animateFrame);
-              } else {
-                this.previousBackgroundImg = fallbackImg;
-                this.previousBackgroundParams = { x, y, sizeX, sizeY };
-              }
-            };
-            
-            requestAnimationFrame(animateFrame);
-          } else {
-            ctx.drawImage(fallbackImg, x, y, sizeX, sizeY);
-            this.previousBackgroundImg = fallbackImg;
-            this.previousBackgroundParams = { x, y, sizeX, sizeY };
-          }
-          
-          this.isFallbackBackground = true;
-        });
-        
-        const video = document.createElement('video');
-        video.className = 'fs-background-video';
-        
-        const computedStyle = getComputedStyle(this.container);
-        const brightnessStr = computedStyle.getPropertyValue('--background-brightness').trim();
-        const blurStr = computedStyle.getPropertyValue('--background-blur').trim();
-        const brightness = brightnessStr ? parseInt(brightnessStr) : 60;
-        const blur = blurStr ? parseInt(blurStr) : 0;
-        
-        const blurCompensation = blur * 4;
-        const topOffset = -blurCompensation;
-        const leftOffset = -blurCompensation;
-        const sizeIncrease = blurCompensation * 2;
-        
-        video.style.cssText = \`
-          position: absolute;
-          top: \${topOffset}px;
-          left: \${leftOffset}px;
-          width: calc(100% + \${sizeIncrease}px);
-          height: calc(100% + \${sizeIncrease}px);
-          object-fit: cover;
-          z-index: -1;
-          pointer-events: none;
-          opacity: 0;
-          transition: opacity 0.5s ease-in-out;
-        \`;
-        video.src = videoUri;
-        video.loop = true;
-        video.muted = true;
-        video.preload = 'auto';
-        video.autoplay = true;
-        
-        video.style.filter = \`brightness(\${brightness / 100}) blur(\${blur}px)\`;
-        
-        this.canvas.parentElement.insertBefore(video, this.canvas);
-        
-        let hasStartedPlaying = false;
-        
-        video.addEventListener('canplay', () => {
-          if (!hasStartedPlaying) {
-            console.log('[Fullscreen] Video can play, fading in...');
-            hasStartedPlaying = true;
-            
-            video.play().then(() => {
-              video.style.opacity = '1';
-              
-              if (existingVideo) {
-                setTimeout(() => {
-                  existingVideo.remove();
-                }, 500);
-              }
-            }).catch(err => {
-              console.error('[Fullscreen] Failed to play video:', err);
-              video.remove();
-              
-              if (existingVideo) {
-                existingVideo.remove();
-              }
-            });
-          }
-        });
-        
-        video.addEventListener('loadeddata', () => {
-          console.log('[Fullscreen] Video loaded successfully');
-        });
-        
-        video.addEventListener('error', (e) => {
-          console.error('[Fullscreen] Video error:', e, video.error);
-          video.remove();
-          
-          if (existingVideo) {
-            existingVideo.remove();
-          }
-        });
-      },
-      
-      drawSolidBackground(color, animate = true) {
-        const ctx = this.canvas.getContext('2d');
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        this.canvas.width = width;
-        this.canvas.height = height;
-        
-        const computedStyle = getComputedStyle(this.container);
-        const brightnessStr = computedStyle.getPropertyValue('--background-brightness').trim();
-        const brightness = brightnessStr ? parseInt(brightnessStr) : 60;
-        
-        ctx.filter = \`brightness(\${brightness / 100})\`;
-        
-        ctx.fillStyle = color;
-        ctx.fillRect(0, 0, width, height);
-        
-        ctx.filter = 'none';
-      },
-      
-      drawBackground(img, animate = true) {
-        const existingVideo = this.canvas.parentElement.querySelector('video.fs-background-video');
-        if (existingVideo) {
-          existingVideo.remove();
-        }
-        
-        this.canvas.style.display = 'block';
-        
-        const ctx = this.canvas.getContext('2d');
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        this.canvas.width = width;
-        this.canvas.height = height;
-        
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        
-        const computedStyle = getComputedStyle(this.container);
-        const blurStr = computedStyle.getPropertyValue('--background-blur').trim();
-        const brightnessStr = computedStyle.getPropertyValue('--background-brightness').trim();
-        
-        const blur = blurStr ? parseInt(blurStr) : 40;
-        const brightness = brightnessStr ? parseInt(brightnessStr) : 60;
-        
-        ctx.filter = \`brightness(\${brightness / 100}) blur(\${blur}px)\`;
-        
-        const scale = Math.max(width / img.width, height / img.height);
-        const x = (width - img.width * scale) / 2 - blur * 2;
-        const y = (height - img.height * scale) / 2 - blur * 2;
-        const sizeX = img.width * scale + blur * 4;
-        const sizeY = img.height * scale + blur * 4;
-        
-        const wasFallback = this.isFallbackBackground;
-        this.isFallbackBackground = false;
-        
-        if (!animate || !this.previousBackgroundImg || wasFallback) {
-          ctx.globalAlpha = 1;
-          ctx.drawImage(img, x, y, sizeX, sizeY);
-          this.previousBackgroundImg = img;
-          this.previousBackgroundParams = { x, y, sizeX, sizeY };
-          return;
-        }
-        
-        const prevImg = this.previousBackgroundImg;
-        const prevParams = this.previousBackgroundParams || { x, y, sizeX, sizeY };
-        const transitionTime = 500;
-        let start;
-        let done = false;
-        
-        const animateFrame = (timestamp) => {
-          if (!start) start = timestamp;
-          const elapsed = timestamp - start;
-          const factor = Math.min(elapsed / transitionTime, 1.0);
-          
-          ctx.globalAlpha = 1;
-          ctx.drawImage(prevImg, prevParams.x, prevParams.y, prevParams.sizeX, prevParams.sizeY);
-          
-          ctx.globalAlpha = Math.sin((Math.PI / 2) * factor);
-          ctx.drawImage(img, x, y, sizeX, sizeY);
-          
-          if (factor === 1.0) {
-            done = true;
-            this.previousBackgroundImg = img;
-            this.previousBackgroundParams = { x, y, sizeX, sizeY };
-          }
-          
-          if (!done) {
-            requestAnimationFrame(animateFrame);
-          }
-        };
-        
-        requestAnimationFrame(animateFrame);
       },
       
       async toggleLike() {
