@@ -22,6 +22,9 @@ function getBackgroundRendererCode() {
       isFallbackBackground: false,
       
       resizeHandler: null,
+      parallaxHandler: null,
+      throttledParallaxHandler: null,
+      parallaxIntensity: 25,
       
       create(container, settings, api) {
         if (!container || !(container instanceof HTMLElement)) {
@@ -41,6 +44,9 @@ function getBackgroundRendererCode() {
         instance.previousBackgroundParams = null;
         instance.currentCoverUrl = null;
         instance.resizeHandler = null;
+        instance.parallaxHandler = null;
+        instance.throttledParallaxHandler = null;
+        instance.parallaxIntensity = 25;
         
         return instance;
       },
@@ -69,6 +75,33 @@ function getBackgroundRendererCode() {
         };
         
         window.addEventListener('resize', this.resizeHandler);
+        
+        this.parallaxHandler = (event) => {
+          const { clientX, clientY } = event;
+          const { innerWidth, innerHeight } = window;
+          const offsetX = clientX / innerWidth - 0.5;
+          const offsetY = clientY / innerHeight - 0.5;
+          const translateX = offsetX * this.parallaxIntensity;
+          const translateY = offsetY * this.parallaxIntensity;
+          
+          requestAnimationFrame(() => {
+            if (this.canvas) {
+              this.canvas.style.transform = \`translate(\${translateX}px, \${translateY}px)\`;
+            }
+            
+            const video = this.canvas?.parentElement?.querySelector('video.fs-background-video');
+            if (video) {
+              video.style.transform = \`translate(\${translateX}px, \${translateY}px)\`;
+            }
+          });
+        };
+        
+        this.throttledParallaxHandler = this._throttle(this.parallaxHandler, 33);
+        window.addEventListener('mousemove', this.throttledParallaxHandler);
+        
+        if (this.canvas) {
+          this.canvas.style.transform = 'translate(0px, 0px)';
+        }
         
         console.log('[BackgroundRenderer] Initialized');
       },
@@ -281,6 +314,12 @@ function getBackgroundRendererCode() {
           this.resizeHandler = null;
         }
         
+        if (this.throttledParallaxHandler) {
+          window.removeEventListener('mousemove', this.throttledParallaxHandler);
+          this.throttledParallaxHandler = null;
+          this.parallaxHandler = null;
+        }
+        
         console.log('[BackgroundRenderer] Cleaned up');
       },
       
@@ -434,9 +473,10 @@ function getBackgroundRendererCode() {
         const blur = blurStr ? parseInt(blurStr) : 0;
         
         const blurCompensation = blur * 4;
-        const topOffset = -blurCompensation;
-        const leftOffset = -blurCompensation;
-        const sizeIncrease = blurCompensation * 2;
+        const parallaxCompensation = 20;
+        const topOffset = -blurCompensation - parallaxCompensation;
+        const leftOffset = -blurCompensation - parallaxCompensation;
+        const sizeIncrease = blurCompensation * 2 + parallaxCompensation * 2;
         
         video.style.cssText = \`
           position: absolute;
@@ -448,7 +488,9 @@ function getBackgroundRendererCode() {
           z-index: -1;
           pointer-events: none;
           opacity: 0;
-          transition: opacity 0.5s ease-in-out;
+          transition: opacity 0.5s ease-in-out, transform 0.16s ease-out;
+          will-change: transform;
+          transform: translate(0px, 0px);
         \`;
         video.src = videoUri;
         video.loop = true;
@@ -593,6 +635,17 @@ function getBackgroundRendererCode() {
       },
       
       _handleResize() {
+      },
+      
+      _throttle(func, limit) {
+        let inThrottle;
+        return function(...args) {
+          if (!inThrottle) {
+            func.apply(this, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+          }
+        };
       }
     };
   `;

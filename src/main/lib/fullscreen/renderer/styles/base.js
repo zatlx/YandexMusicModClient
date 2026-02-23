@@ -35,13 +35,14 @@ function getBaseStyles() {
 
     #fsd-background {
       position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
+      left: -20px;
+      top: -20px;
+      width: calc(100% + 40px);
+      height: calc(100% + 40px);
       overflow: hidden;
       z-index: -2;
-      transition: opacity 0.8s ease-in-out;
+      transition: opacity 0.8s ease-in-out, transform 0.16s ease-out;
+      will-change: transform;
     }
 
     #fsd-background.animated {
