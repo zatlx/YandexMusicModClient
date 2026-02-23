@@ -58,9 +58,11 @@ function getLyricsCode() {
         }
         
         if (!window.__lyricsModuleInitialized) {
-          setupEventListeners();
+          setupGlobalEventListeners();
           window.__lyricsModuleInitialized = true;
         }
+        
+        setupDOMEventListeners();
         
         restoreState();
         
@@ -137,19 +139,20 @@ function getLyricsCode() {
         lyricsState.currentProgress = FullscreenControls.currentProgress || 0;
       }
       
-      function setupEventListeners() {
+      function setupGlobalEventListeners() {
         if (window.desktopEvents) {
           window.desktopEvents.on('track-changed', handleTrackChange);
         }
 
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+      }
+      
+      function setupDOMEventListeners() {
         if (lyricsContent) {
           lyricsContent.addEventListener('click', handleLyricsClick);
-
           lyricsContent.addEventListener('wheel', handleUserScroll);
           lyricsContent.addEventListener('touchmove', handleUserScroll);
         }
-
-        document.addEventListener('visibilitychange', handleVisibilityChange);
       }
       
       function handleUserScroll() {
